@@ -1,23 +1,6 @@
-%% Simulates a small reservoir of LIF-neurons
-%% add file paths
-
-addpath('plot_functions')
-addpath('help_functions')
-
-%% Neurons and static weight matrix
-% number of neurons
-N = 50;
-
-% static weights
-G = 8; % scaling parameter
-p = 0.6; % sparsity
-rng('shuffle')
-OMEGA =  G*(randn(N,N)).*(rand(N,N)<p)/(sqrt(N)*p); % par G * random N x N matrix * logical operator matrix dictated by the sparsity
-
-for i = 1:1:N % What is happening here?
-    QS = find(abs(OMEGA(i,:))>0);
-    OMEGA(i,QS) = OMEGA(i,QS) - sum(OMEGA(i,QS))/length(QS);
-end
+function [output] = ni_nf_spiking_network(OMEGA, N)
+%SPIKING_NETWORK_ Summary of this function goes here
+%   Detailed explanation goes here
 
 %% Network parameters
 Ibias = -40; % current bias
@@ -92,26 +75,13 @@ avg_fire_rate = calc_avg_fire_rate(neurons, N, T);
 
 % calculate the coefficient of variation
 Cv = calc_cv(tspike, N).';
-    
-%% Plots
 
-figure(1)
-x = 1:T;
+%% create output struct
 
-% Neurons spikes plot
-subplot(3,1,1)
-spike_times = tspike(:, 2);
-spike_plot(neurons, spike_times, T)
-
-% Neuron potential trace
-subplot(3,1,2)
-voltage_trace(vtrace, T)
-
-
-% Neuronal current trace
-subplot(3,1,3)
-current_trace(Itrace, T)
-
-figure(2)
-Cv_fire_rate_plot(Cv, avg_fire_rate)
+output.tspike = tspike;
+output.vtrace = vtrace;
+output.Itrace = Itrace;
+output.avg_fire_rate = avg_fire_rate;
+output.Cv = Cv;
+end
 
