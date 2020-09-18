@@ -3,7 +3,7 @@ function [ A_t, ISI, Cv ] = spike_stats( tspike, trial_length , N )
 % coefficient of variation and the average activity.
 
 % Average activity
-[A_t, ~] = histcounts(tspike(:,2),1:1:trial_length);
+[A_t, ~] = histcounts(tspike(:,2),1:1:trial_length); % alle the spikes within each ms of the trial
 
 % ISI
 ISI = [];

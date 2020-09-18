@@ -18,7 +18,9 @@ G = param.par_comb(iter,1); Q = param.par_comb(iter, 2);
 N = param.N;   
 Ein = param.Ein;
 rate = param.rate;
-N_train = param.N_train; N_total = param.N_total; N_test = param.N_test;
+N_train = param.N_train; 
+N_total = param.N_total; 
+N_test = param.N_test;
 k = 1; % number of outputs
 
 %% Initialise weights
@@ -28,7 +30,7 @@ BPhi = zeros(N,k); % Output weights
 rng('shuffle')
 E = (2*rand(N,k)-1)*Q;  % Feedback weights
 OMEGA =  G*(randn(N,N)).*(rand(N,N)<p)/(sqrt(N)*p); % Static weights
-for i = 1:1:N
+for i = 1:1:N % What is happening here?
     QS = find(abs(OMEGA(i,:))>0);
     OMEGA(i,QS) = OMEGA(i,QS) - sum(OMEGA(i,QS))/length(QS);
 end
@@ -110,9 +112,9 @@ for n = 1:N_total %Repeat everyting N_total times
     parameters_out(n).network = val_dat(:,4);
     parameters_out(n).spikes = val_dat(:,5);
     parameters_out(n).weight_change = weight_change;
-    parameters_out(n).A_t= stats(:,1);
-    parameters_out(n).ISI= stats(:,2);
-    parameters_out(n).Cv= stats(:,3);
+    parameters_out(n).A_t= stats(:,1); % average activity
+    parameters_out(n).ISI= stats(:,2); % inter spike interval
+    parameters_out(n).Cv= stats(:,3); % Coëfficient of variation
     parameters_out(n).val_trials = save_val_trials;
     parameters_out(n).train_trials = shuffled_train;
     [ acc ] = val_acc( parameters_out(n), first_touches);

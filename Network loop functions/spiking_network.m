@@ -10,10 +10,11 @@ function [ error, BPhi, zx, z_out, tspike ] = spiking_network( param, weights, i
 % (tspike).
 
 N = param.N; 
-alpha = param.alpha;
-BIAS = param.BIAS; step = param.step; 
-dt = param.dt; 
-td = param.td;
+alpha = param.alpha; % learning rate
+BIAS = param.BIAS;
+step = param.step; 
+dt = param.dt; % integration step time
+td = param.td; % synaptic decay
 
 %% Network parameters
 tref = 2; %Refractory time constant in milliseconds 
@@ -21,7 +22,7 @@ tm = 10; %Membrane time constant
 vreset = -65; %Voltage reset 
 vpeak = -40; %Voltage threshold 
 rng(1);
-tr = 2;
+tr = 2; % synaptic rise time
 %% Storage parameters and some others
 Pinv = eye(N)*alpha; %initialize the correlation weight matrix for RLMS
 IPSC = zeros(N,1); %post synaptic current storage variable 
@@ -33,11 +34,11 @@ v = vreset + rand(N,1)*(30-vreset); %Initialize neuronal voltage with random dis
 tlast = zeros(N,1); %This vector is used to set the refractory times 
 z = 0; % Initial z value
 %% Define weights
-BPhi = weights.output_weights;
-OMEGA = weights.static_weights;
-E = weights.feedback_weights;
+BPhi = weights.output_weights; % learnt output weights
+OMEGA = weights.static_weights; % static weights
+E = weights.feedback_weights; % feedback weights
 %% Define input and time
-zx = input_struct.target_function;
+zx = input_struct.target_function; % target function
 T = length(zx);
 nt = T/dt;
 % Define some storage arrays
@@ -54,7 +55,7 @@ in = 1;
 tspike = zeros(1,2); %Storage variable for spike times
 ns = 0;
 %% MAIN NETWORK LOOP
-for i = 1:1:nt
+for i = 1:1:nt % for every integration step time T = length(zx), nt = T/dt
     if mod(i,1/dt) == 0 % this loop makes sure that only every 1 ms a new data point is presented
         in=in+1;
     end
@@ -84,7 +85,7 @@ for i = 1:1:nt
     z_out(in,1) = z;
     % RLS
     if FORCE
-        if mod(i,step) == 1
+        if mod(i,step) == 1 % every step iterations (in this case 20) the output weights are updated
             if zx(in) ~= 0 % Makes sure there is only RLS when the target is non-zero
                 cd = Pinv*r;
                 BPhi = BPhi - (cd*err');
@@ -93,14 +94,16 @@ for i = 1:1:nt
         end
     end
     tlast = tlast + (dt*i -tlast).*(v>=vpeak);  %Used to set the refractory period of LIF neurons
-        
+    
+    % filter the spikes that go through the network
     IPSC = IPSC*exp(-dt/tr) + h*dt;
     h = h*exp(-dt/td) + JD*(length(index)>0)/(tr*td) + input(:,i)/(tr*td);  % THE LAST TERM ARE THE THALAMIC SPIKES
-        
-    r = r*exp(-dt/tr) + hr*dt;
+    
+    % filter the spikes of the synaptic output
+    r = r*exp(-dt/tr) + hr*dt; 
     hr = hr*exp(-dt/td) + (v>=vpeak)/(tr*td);
         
-    v = v + (30 - v).*(v>=vpeak);
+    v = v + (30 - v).*(v>=vpeak); % Sets the voltage to spike 
     v = v + (vreset - v).*(v>=vpeak); %reset with spike time interpolant implemented.
 end
 %%

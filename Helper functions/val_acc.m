@@ -1,15 +1,15 @@
 function [ acc ] = val_acc( parameters_out, first_touches )
 % Calculate the validation accuracy 
-num_val = length(parameters_out.network);
+num_val = length(parameters_out.network); % number of epochs
 mean_network = zeros(num_val, 1);
 mean_target = zeros(num_val, 1);
 
 
 %% Calculate the mean value each trial
 for i = 1:num_val
-    zx = parameters_out.network{i};
-    z_t = parameters_out.target{i};
-    trial_length = z_t - 1200;
+    zx = parameters_out.network{i}; 
+    z_t = parameters_out.target{i};  
+    % trial_length = z_t - 1200;
     % Only calculate mean when output is trained
     %s_t = length(zx) - 800 - 500;
     s_t = first_touches(i);

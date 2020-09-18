@@ -10,8 +10,8 @@ N_th = 200;                               % This is the number of thalamus neuro
 N = 400;                                  % Number of neurons in the reservoir.
 %% Parametersweep over these
 
-G = [8, 9];
-Q =[ 1]; 
+G = [7, 8]; % scales static weights
+Q =[1]; % scales learnt/output weights
 par_comb = allcomb(G, Q);
 
 %% Set other parameters
@@ -56,6 +56,7 @@ foldername = 'G_8_4'; % To save data
 mkdir(foldername)
 clear parameters_out
 
+% to run one loop at a time -> (i = 1: size(par_comb,1), 0)
 parfor i = 1: size(par_comb,1) % Use parfor loop to train networks with different parameters
     
     run(i).parameters_out  = LIF_train_some( parameters_in, i, foldername); % All relevant parameters are stored in the 'run' struct
@@ -105,8 +106,8 @@ end
 
 %% Define trial you want to investigate
 parameters_out = run(1).parameters_out;
-epoch = 1;
-trial = 1;
+epoch = 2;
+trial = 2;
 tspike = parameters_out(epoch).spikes{trial,1};A_t = parameters_out(epoch).A_t{trial,1};ISI = parameters_out(epoch).ISI{trial,1};Cv = parameters_out(epoch).Cv{trial,1};val_trial = parameters_out(epoch).val_trials{1,trial};  
 Cv = Cv(~isnan(Cv));
 
