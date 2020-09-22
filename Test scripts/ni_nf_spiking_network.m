@@ -1,19 +1,22 @@
-function [output] = ni_nf_spiking_network(OMEGA, N)
-%SPIKING_NETWORK_ Summary of this function goes here
-%   Detailed explanation goes here
+function [tspike, avg_fire_rate, Cv] = ni_nf_spiking_network(OMEGA, N)
+% This function simulates a reservoir of spiking neurons with no input,
+% output or feedback weights. 
+
+% As input parameters it receives the static weights en the amount of neurons in the
+% network. 
+% As output returns the spike times, the average firing rates and the coefficient of variation. 
 
 %% Network parameters
 Ibias = -40; % current bias
 dt = 0.05;% integration step time
-tref = 1; % refractory time constant in milliseconds
+tref = 2; % refractory time constant in milliseconds
 tm = 10; % membrane time constant
 vreset = -65; % voltage reset
 vthresh = -40; % voltage threshold
 td = 50; % synaptic decay
 tr = 2; % synaptic rise
 
-%% Define times
-
+%% Define times and steps with the integration step time
 T = 3500;
 nt = T/dt;
 
@@ -27,18 +30,21 @@ JD = 0*IPSC; %storage variable required for each spike time
 v = vreset + rand(N,1)*(30-vreset); %Initialize neuronal voltage with random distribtuions
 tlast = zeros(N,1); %This vector is used to set the refractory times
 tspike = zeros(1,2);
-vtrace = zeros(N,T);
-Itrace = zeros(N,T);
 
 %% MAIN NETWORK LOOP
 
-
+% loop through the amount of network integration steps
 for i = 1:1:nt
     
-    I = IPSC + Ibias; % neuronal current
-    dv = (dt*i>tlast + tref).*(-v + I)/tm; %Voltage equation
+    % calculat the neuronal current
+    I = IPSC + Ibias;
+    
+    % calculate the change in neuron voltage
+    dv = (dt*i>tlast + tref).*(-v + I)/tm; 
     v = v + dt*(dv); 
-    index = find(v>=vthresh); % find the neurons that have spiked
+    
+    % remember the neurons that have spiked
+    index = find(v>=vthresh); 
     
     % save voltage and current traces for every ms
     if mod(i,1/dt) == 0
@@ -47,24 +53,29 @@ for i = 1:1:nt
         Itrace(:,ms) = Itrace(:,ms) + I;
     end
    
+    % if neurons have spiked
     if ~isempty(index)
-        JD = sum(OMEGA(:,index),2); % sum synaptic input of spikes
         
-        % save spike times
-        spikes = [index,0*index+dt*i];
-        tspike = [tspike; spikes ];
+        % calculate the sum synaptic input of the spikes
+        JD = sum(OMEGA(:,index),2); 
+        
+        % save the spike times
+        spikes = [index, 0*index+dt*i];
+        tspike = [tspike, spikes];
     end
     
-    tlast = tlast + (dt*i - tlast).*(v>=vthresh); % update the refactory periods
+    % calculate the postsynaptic potential with double exponential filters
+    IPSC = IPSC*exp(-dt/tr) + h*dt; 
+    h = h*exp(-dt/td) + JD*(~isempty(index)/(tr*td));
     
-    IPSC = IPSC*exp(-dt/tr) + h*dt; % first synaptic filter
-    h = h*exp(-dt/td) + JD*(~isempty(index)/(tr*td)); % second synaptic filter with decay time
-    
+    % calculate the output activity with double exponential filters
     %r = r*exp(-dt/tr) + hr*dt;
     %hr = hr*exp(-dt/td) + (v>=vthresh)/(tr*td);
     
+    % reset the neurons that spiked and update the refactory period
     v = v + (30 - v).*(v>=vthresh)/(tr*td); 
-    v = v + (vreset - v).*(v>=vthresh); % reset the neurons that spiked
+    v = v + (vreset - v).*(v>=vthresh);
+    tlast = tlast + (dt*i - tlast).*(v>=vthresh); 
 end
 
 %% Firing rate and coefficient of variation
@@ -75,13 +86,5 @@ avg_fire_rate = calc_avg_fire_rate(neurons, N, T);
 
 % calculate the coefficient of variation
 Cv = calc_cv(tspike, N).';
-
-%% create output struct
-
-output.tspike = tspike;
-output.vtrace = vtrace;
-output.Itrace = Itrace;
-output.avg_fire_rate = avg_fire_rate;
-output.Cv = Cv;
 end
 
