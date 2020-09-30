@@ -15,11 +15,11 @@ mkdir Output
 
 % set number of thalamus and reservoir neurons
 N_th = 200;
-N = 2000;
+N = 200;
 
 % set the training, validation trials (has to be even)
-N_train = 4;
-N_test = 2;
+N_train = 50;
+N_test = 10;
 
 % set the number of epochs
 N_total = 1;
@@ -55,8 +55,8 @@ param_comb = all_comb(Win, G, Q, Winp);
 load('trainable_trials')
 
 % get the shuffled train and test trials in the ratio 1:1, prox:dist
-[train_trials, test_trials] =...
-    trial_selector(prox_touch, dist_no_touch, N_train, N_test);
+[train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
+    trainable_trials.dist_no_touch, N_train, N_test);
 
 %% Prepare input struct
 parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
@@ -80,4 +80,4 @@ end
 
 %% Save the output data
 
-save('Output/G7_Q1.mat', 'parameters_out')
+save('Output/new_trial_test', 'parameters_out')

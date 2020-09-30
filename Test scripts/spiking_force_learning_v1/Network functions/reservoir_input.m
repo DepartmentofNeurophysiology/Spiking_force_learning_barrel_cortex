@@ -55,8 +55,8 @@ l_t = size(spike_array.neuron_input,2) + reset;
 z_t = zeros(l_t,1);
 % z_t(size(spike_array.neuron_input,2)-start_early:1:size(spike_array.neuron_input,2)+constant) = dat{1}(1)*amp*ones(start_early+constant+1,1);
 % z_t(size(spike_array.neuron_input,2)+constant:1:size(spike_array.neuron_input,2)+pulse_length+constant) =  dat{1}(1)*amp*exp(-(0:1:pulse_length)./decay);
-z_t(first_touch:size(spike_array.neuron_input,2)+constant) = -dat{1}(1)*amp*ones(length(first_touch:size(spike_array.neuron_input,2)+constant),1);
-z_t(size(spike_array.neuron_input,2)+constant:1:size(spike_array.neuron_input,2)+pulse_length+constant) =  -dat{1}(1)*amp*exp(-(0:1:pulse_length)./decay);
+z_t(first_touch:size(spike_array.neuron_input,2)+constant) = -dat(1)*amp*ones(length(first_touch:size(spike_array.neuron_input,2)+constant),1);
+z_t(size(spike_array.neuron_input,2)+constant:1:size(spike_array.neuron_input,2)+pulse_length+constant) =  -dat(1)*amp*exp(-(0:1:pulse_length)./decay);
 
 z_all = [z_all z_t'];
 

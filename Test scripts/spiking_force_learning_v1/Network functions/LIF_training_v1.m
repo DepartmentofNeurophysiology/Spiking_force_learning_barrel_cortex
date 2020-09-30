@@ -63,8 +63,8 @@ train_trials = param.train_trials;
 test_trials = param.test_trials;
 
 % load the file names and their y and touch values
-names = load('labeled_spike_names.mat'); 
-names = names.names;
+%names = load('labeled_spike_names.mat'); 
+%names = names.names;
 %% Create the spiking structs for these trials?
 
 %% Train and test the network
@@ -85,11 +85,11 @@ for epoch = 1:N_total
     for trial = 1:N_train
         
         % get the trial name and load the spiking sturct
-        trial_name = names{1, train_trials(trial)};
+        trial_name = train_trials(trial).spike_struct;
         load( ['./Spiking structures/', trial_name]);
         
         % get the pole location and the input struct and target function
-        pole = SpikeTrainStruct{1, 1}.ytrain;
+        pole = train_trials(trial).ytrain;
         [thalamus_input, target] =...
             reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate); 
         
@@ -113,15 +113,15 @@ for epoch = 1:N_total
     for trial = 1:N_test
         
         % get the trial name and load the spiking sturct
-        trial_name = names{1, test_trials(trial)};
+        trial_name = test_trials(trial).spike_struct;
         load( ['./Spiking structures/', trial_name]);
         
         % save the validation trials and firs touches
         test_output.trials{trial} = trial_name;
-        test_output.first_touches(trial,1) = SpikeTrainStruct{1, 1}.first_touch;
+        test_output.first_touches(trial,1) = test_trials(trial).first_touch;
         
         % get the pole location and the input struct and target function
-        pole = SpikeTrainStruct{1, 1}.ytrain;
+        pole = test_trials(trial).ytrain;
         [thalamus_input, target] =...
             reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate);
         
