@@ -28,9 +28,6 @@ Winp = scale_param.Winp;
 % number of network outputs 
 k = 1;
 
-% apply FORCE learning
-FORCE = param.FORCE;
-
 %% Initialize matrix weights
 
 % static weights
@@ -78,15 +75,29 @@ for epoch = 1:N_total
     % TRAINING
     disp(['Training network, number of trials = ', num2str(N_train)])
     
+    % apply FORCE learning
+    FORCE = param.FORCE;
+    
     % weight change storage variable
     weight_change = zeros(N_train, 1);
     
     % training trials
     for trial = 1:N_train
         
-        % get the trial name and load the spiking sturct
-        trial_name = train_trials(trial).spike_struct;
-        load( ['./Spiking structures/', trial_name]);
+        % get the trial name 
+        trialId = train_trials(trial).trial;
+        
+        % make or load the spikes
+        if param.makespikes
+            
+            % get the trial session and create the spikingstruct
+            session = train_trials(trial).session;
+            SpikeTrainStruct = make_trial_spikes(session, trialId);
+        else
+            % get the struct name and load it
+            trial_mat = train_trials(trial).spike_struct;
+            load( ['./Spiking structures/', trial_mat]);
+        end
         
         % get the pole location and the input struct and target function
         pole = train_trials(trial).ytrain;
@@ -102,22 +113,36 @@ for epoch = 1:N_total
         % calculate the weight difference and update the output weights
         d_output = old_output - output;
         weight_change(trial, 1) = sum(abs(d_output));
-        weights.output_weights = output;
+        weights.output = output;
     end
     
     
     % VALIDATION
     disp(['Testing network, number of trials = ', num2str(N_test)])
     
+    % turn off FORCE learning
+    FORCE = 0;
+    
     % validation trials
     for trial = 1:N_test
         
-        % get the trial name and load the spiking sturct
-        trial_name = test_trials(trial).spike_struct;
-        load( ['./Spiking structures/', trial_name]);
+        % get the trial name 
+        trialId = test_trials(trial).trial;
+        
+        % make or load the spikes
+        if param.makespikes
+            
+            % get the trial session and create the spikingstruct
+            session = test_trials(trial).session;
+            SpikeTrainStruct = make_trial_spikes(session, trialId);
+        else
+            % get the struct name and load it
+            trial_mat = test_trials(trial).spike_struct;
+            load( ['./Spiking structures/', trial_mat]);
+        end
         
         % save the validation trials and firs touches
-        test_output.trials{trial} = trial_name;
+        test_output.trials{trial} = trialId;
         test_output.first_touches(trial,1) = test_trials(trial).first_touch;
         
         % get the pole location and the input struct and target function
@@ -143,9 +168,14 @@ for epoch = 1:N_total
         test_output.stats{trial}.Cv = Cv;
     end
     
+    % calculate the test accuracy
+    acc = val_acc(N_total, test_output.Z_out, test_output.Zx, test_output.first_touches);
+    
+    % save the training data per epoch
     training_output(epoch).param_comb = scale_param;
     training_output(epoch).weight_change = weight_change;
     training_output(epoch).train_trials = train_trials;
     training_output(epoch).test_output = test_output;
+    training_output(epoch).acc = acc;
 end
 
