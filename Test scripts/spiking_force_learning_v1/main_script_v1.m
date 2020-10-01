@@ -6,7 +6,9 @@
 addpath(genpath('Spiking structures'))
 addpath(genpath('Helper data'))
 addpath(genpath('Helper functions'))
+addpath(genpath('Thalamus functions'))
 addpath(genpath('Network functions'))
+
 
 % create an output folder
 mkdir Output
@@ -15,14 +17,14 @@ mkdir Output
 
 % set number of thalamus and reservoir neurons
 N_th = 200;
-N = 200;
+N = 400;
 
 % set the training, validation trials (has to be even)
-N_train = 50;
-N_test = 10;
+N_train = 2;
+N_test = 2;
 
 % set the number of epochs
-N_total = 1;
+N_total = 2;
 
 % set the scaling parameters of the input, static and feedback weights
 Win = 0.5;
@@ -38,6 +40,9 @@ alpha = 0.05;
 
 % apply FORCE learning
 FORCE = 1;
+
+% choose to make or load spike structs
+makespikes = 0;
 
 % static parameters
 Ibias = -40;
@@ -61,9 +66,9 @@ load('trainable_trials')
 %% Prepare input struct
 parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
     'N_test', N_test, 'N_total', N_total, 'tau_d', tau_d,...
-    'alpha', alpha, 'FORCE', FORCE, 'Ibias', Ibias, 'step', step,...
-    'dt', dt, 'rate', rate, 'tau_r', tau_r, 'train_trials', train_trials,...
-    'test_trials', test_trials);
+    'alpha', alpha, 'FORCE', FORCE, 'makespikes', makespikes,...
+    'Ibias', Ibias, 'step', step, 'dt', dt, 'rate', rate, 'tau_r', tau_r,...
+    'train_trials', train_trials, 'test_trials', test_trials);
 %% Train and test the network
 for i = 1: size(param_comb, 1)
     
@@ -75,9 +80,9 @@ for i = 1: size(param_comb, 1)
     scale_parameters.Winp = param_comb(i, 4);
     
     % run the network
-    parameters_out(i) = LIF_training_v1(parameters_in, scale_parameters);
+    run(i).parameters_out = LIF_training_v1(parameters_in, scale_parameters);
 end
 
 %% Save the output data
 
-save('Output/new_trial_test', 'parameters_out')
+save('Output/new_trial_test', 'run')
