@@ -55,7 +55,8 @@ v = vreset + rand(N,1)*(30-vreset);
 
 % refactory times, spiketimes and total number of spikes
 tlast = zeros(N,1); 
-tspikes = zeros(1,2); 
+% tspikes = zeros(1,2);
+tspikes = zeros(4*nt, 2);
 nspikes = 0;
 
 % first, second and third storage variables for filtered rates
@@ -91,8 +92,12 @@ for i = 1:1:nt
         Ispikes = sum(static_weights(:, spike_index), 2);
         
         % this changes tspikes every loop!!!
-        spikes = [spike_index, 0*spike_index + dt*i];
-        tspikes = [tspikes; spikes];
+        % spikes = [spike_index, 0*spike_index + dt*i];
+        % tspikes = [tspikes; spikes];
+        
+        tspikes(nspikes+1:nspikes+length(spike_index),:) =...
+            [spike_index, 0*spike_index+dt*i];
+        
         nspikes = nspikes + length(spike_index);
     end
     
