@@ -1,6 +1,6 @@
-function [ acc ] = val_acc(epoch, network_output, target, first_touches )
+function [ acc ] = val_acc(test_trials, network_output, target, first_touches )
 % Calculate the validation accuracy 
-num_val = epoch; % number of epochs
+num_val = test_trials; % number of test trials
 mean_network = zeros(num_val, 1);
 mean_target = zeros(num_val, 1);
 

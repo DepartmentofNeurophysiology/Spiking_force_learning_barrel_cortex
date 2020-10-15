@@ -1,4 +1,4 @@
-function [ training_output ] = LIF_training_v1(param, scale_param)
+function [ training_output ] = LIF_training_v1(param, scale_param, savefolder)
 %LIF_TRAINING Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -30,7 +30,13 @@ k = 1;
 
 %% Initialize matrix weights
 
+% input weights
+input = Win.*rand(N,N_th).*(rand(N,N_th) < Winp); 
+
+rng('shuffle')
+
 % static weights
+
 static =  G*(randn(N,N)).*(rand(N,N)<p)/(sqrt(N)*p);
 
 % set the row average to be zero, explicitly 
@@ -39,11 +45,29 @@ for i = 1:1:N
     static(i,QS) = static(i,QS) - sum(static(i,QS))/length(QS);
 end
 
-% input weights
-input = Win.*rand(N,N_th).*(rand(N,N_th) < Winp); 
+%{
+% Apply Dale's law
+
+% number of exci and ini neurons 
+Nexc = round(0.5 * N);
+Nini = N - Nexc;
+
+% initiate both halves of the static weights
+static_exc = G*abs(randn(N, Nexc)).*(rand(N, Nexc) < p)/(sqrt(N)*p);
+static_ini = G*abs(randn(N, Nini)).*-(rand(N, Nini) < p)/(sqrt(N)*p);
+
+% set the mean input of each neuron to zero by adjusting the inibition
+for i = 1:N 
+    QS = find(static_ini(i, :) ~= 0);
+    
+    row_sum = sum(static_exc(i, :)) + sum(static_ini(i, :));
+    static_ini(i, QS) = static_ini(i, QS) - row_sum/length(QS);
+end
+
+static = [static_exc static_ini];
+%}
 
 % feedback weights
-rng('shuffle')
 feedback = Q*(2*rand(N,k)-1);
 
 % output weights 
@@ -58,11 +82,6 @@ weights.output = output;
 %% list of trials for training and validation
 train_trials = param.train_trials;
 test_trials = param.test_trials;
-
-% load the file names and their y and touch values
-%names = load('labeled_spike_names.mat'); 
-%names = names.names;
-%% Create the spiking structs for these trials?
 
 %% Train and test the network
 
@@ -121,7 +140,7 @@ for epoch = 1:N_total
     disp(['Testing network, number of trials = ', num2str(N_test)])
     
     % turn off FORCE learning
-    FORCE = 0;
+    FORCE = false;
     
     % validation trials
     for trial = 1:N_test
@@ -158,8 +177,8 @@ for epoch = 1:N_total
         trial_length = length(Z_out);
         [ A_t, ISI, Cv ] = spike_stats( tspikes, trial_length , N );
         
+        weights.output = output_weights;
         test_output.error{trial} = error;
-        test_output.output_weights{trial} = output_weights;
         test_output.Zx{trial} = Zx;
         test_output.Z_out{trial} = Z_out;
         test_output.tspikes{trial} = tspikes;
@@ -169,13 +188,34 @@ for epoch = 1:N_total
     end
     
     % calculate the test accuracy
-    acc = val_acc(N_total, test_output.Z_out, test_output.Zx, test_output.first_touches);
+    acc = val_acc(N_test, test_output.Z_out, test_output.Zx, test_output.first_touches);
     
     % save the training data per epoch
-    training_output(epoch).param_comb = scale_param;
+    
     training_output(epoch).weight_change = weight_change;
     training_output(epoch).train_trials = train_trials;
     training_output(epoch).test_output = test_output;
     training_output(epoch).acc = acc;
+    training_output(epoch).weights = weights;
 end
+
+%% save the output of the network
+
+output_save.training_output = training_output;
+output_save.scale_param = scale_param;
+
+f = filesep;
+
+filename = '';
+field_names = fieldnames(scale_param);
+for i = 1 : length(field_names)
+    field = char(field_names(i));
+    value = getfield(scale_param, field);
+    str = [field '_' num2str(value)];
+    
+    filename = [filename str];
+end
+
+ savename = [savefolder f filename '.mat'];
+ save(savename, 'training_output', 'scale_param')
 

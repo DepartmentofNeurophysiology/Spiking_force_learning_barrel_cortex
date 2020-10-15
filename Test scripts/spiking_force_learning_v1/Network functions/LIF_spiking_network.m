@@ -1,8 +1,6 @@
 function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network_v1(param, weights, thalamus_input, target, FORCE)
 %LIF_SPIKING_NETWORK_V1 Summary of this function goes here
 %   Detailed explanation goes here
-%% Random number generator - why?
-rng(1);
 
 %% Network parameters
 
@@ -20,6 +18,7 @@ tref = 2;
 tau_m = 10;
 vreset = -65;
 vthresh = -40; 
+rng(1);
 
 %% Define weights
 output_weights = weights.output;
@@ -55,7 +54,6 @@ v = vreset + rand(N,1)*(30-vreset);
 
 % refactory times, spiketimes and total number of spikes
 tlast = zeros(N,1); 
-% tspikes = zeros(1,2);
 tspikes = zeros(4*nt, 2);
 nspikes = 0;
 
@@ -72,14 +70,14 @@ Z_out = zeros(T,1);
 Pinv = eye(N)*alpha; 
 
 %% MAIN NETWORK LOOP
-
 for i = 1:1:nt
     
     % present a new datapoint every 1 ms 
     in = ceil(i * dt);
     
     % update the input current of the neurons
-    I = Ipsc + feedback_weights*Z + Ibias;
+    syn_weights = feedback_weights*Z;
+    I = Ipsc + syn_weights + Ibias;
     dv = (dt*i > tlast + tref).*(-v + I)/tau_m;
     v = v + dt*(dv);
     
@@ -91,31 +89,11 @@ for i = 1:1:nt
        
         Ispikes = sum(static_weights(:, spike_index), 2);
         
-        % this changes tspikes every loop!!!
-        % spikes = [spike_index, 0*spike_index + dt*i];
-        % tspikes = [tspikes; spikes];
-        
         tspikes(nspikes+1:nspikes+length(spike_index),:) =...
             [spike_index, 0*spike_index+dt*i];
         
         nspikes = nspikes + length(spike_index);
     end
-    
-    % set the refractory period of the neurons
-    tlast = tlast + (dt*i - tlast).*(v >= vthresh);
-    
-    % filtered thalamus spikes
-    thalamus_spikes = input(:,i)/(tau_r*tau_d);
-    
-    % apply the double exponential filter for the postsynaptic current
-    Ipsc = Ipsc*exp(-dt/tau_r) + h*dt;
-    h = h*exp(-dt/tau_d) + Ispikes*(~isempty(spike_index))/(tau_r*tau_d)...
-        + thalamus_spikes;  
-    
-    % filter the spikes of the synaptic output
-    r = r*exp(-dt/tau_r) + hr*dt; 
-    hr = hr*exp(-dt/tau_d) + (v>=vthresh)/(tau_r*tau_d);
-    
     %% Implement RLMS with the FORCE method
     
     % calculate the network output and error
@@ -135,6 +113,21 @@ for i = 1:1:nt
             Pinv = Pinv -((cd)*(cd'))/( 1 + (r')*(cd));
         end
     end
+     
+    % set the refractory period of the neurons
+    tlast = tlast + (dt*i - tlast).*(v >= vthresh);
+    
+    % filtered thalamus spikes
+    thalamus_spikes = input(:,i)/(tau_r*tau_d);
+    
+    % apply the double exponential filter for the postsynaptic current
+    Ipsc = Ipsc*exp(-dt/tau_r) + h*dt;
+    h = h*exp(-dt/tau_d) + Ispikes*(~isempty(spike_index))/(tau_r*tau_d)...
+        + thalamus_spikes;  
+    
+    % filter the spikes of the synaptic output
+    r = r*exp(-dt/tau_r) + hr*dt; 
+    hr = hr*exp(-dt/tau_d) + (v>=vthresh)/(tau_r*tau_d);
     
     % spike and reset the voltage of the neurons that fired
     v = v + (30 - v).*(v >= vthresh);
