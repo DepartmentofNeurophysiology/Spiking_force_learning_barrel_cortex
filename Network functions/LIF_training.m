@@ -1,4 +1,4 @@
-function [ training_output ] = LIF_training_v1(param, scale_param, savefolder)
+function [ training_output ] = LIF_training(param, scale_param, savefolder)
 %LIF_TRAINING Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -25,6 +25,9 @@ p = 0.1;
 % set input network sparsity
 Winp = scale_param.Winp;
 
+% set Pexc
+Pexc = scale_param.Pexc;
+
 % number of network outputs 
 k = 1;
 
@@ -37,35 +40,37 @@ rng('shuffle')
 
 % static weights
 
-static =  G*(randn(N,N)).*(rand(N,N)<p)/(sqrt(N)*p);
+if Pexc == 0
+    static =  G*(randn(N,N)).*(rand(N,N)<p)/(sqrt(N)*p);
 
-% set the row average to be zero, explicitly 
-for i = 1:1:N 
-    QS = find(abs(static(i,:))>0);
-    static(i,QS) = static(i,QS) - sum(static(i,QS))/length(QS);
-end
-
-%{
-% Apply Dale's law
-
-% number of exci and ini neurons 
-Nexc = round(0.5 * N);
-Nini = N - Nexc;
-
-% initiate both halves of the static weights
-static_exc = G*abs(randn(N, Nexc)).*(rand(N, Nexc) < p)/(sqrt(N)*p);
-static_ini = G*abs(randn(N, Nini)).*-(rand(N, Nini) < p)/(sqrt(N)*p);
-
-% set the mean input of each neuron to zero by adjusting the inibition
-for i = 1:N 
-    QS = find(static_ini(i, :) ~= 0);
+    % set the row average to be zero, explicitly 
+    for i = 1:1:N 
+        QS = find(abs(static(i,:))>0);
+        static(i,QS) = static(i,QS) - sum(static(i,QS))/length(QS);
+    end
+else
     
-    row_sum = sum(static_exc(i, :)) + sum(static_ini(i, :));
-    static_ini(i, QS) = static_ini(i, QS) - row_sum/length(QS);
+    % Apply Dale's law
+
+    % number of exci and ini neurons 
+    Nexc = round(Pexc * N);
+    Nini = N - Nexc;
+
+    % initiate both halves of the static weights
+    static_exc = G*abs(randn(N, Nexc)).*(rand(N, Nexc) < p)/(sqrt(N)*p);
+    static_ini = G*abs(randn(N, Nini)).*-(rand(N, Nini) < p)/(sqrt(N)*p);
+
+    % set the mean input of each neuron to zero by adjusting the inibition
+    for i = 1:N 
+        QS = find(static_ini(i, :) ~= 0);
+    
+        row_sum = sum(static_exc(i, :)) + sum(static_ini(i, :));
+        static_ini(i, QS) = static_ini(i, QS) - row_sum/length(QS);
+    end
+
+    static = [static_exc static_ini];
 end
 
-static = [static_exc static_ini];
-%}
 
 % feedback weights
 feedback = Q*(2*rand(N,k)-1);
@@ -127,7 +132,7 @@ for epoch = 1:N_total
         % save the old output weights
         old_output = output;
         [~, output, ~, ~, ~] =...
-            LIF_spiking_network_v1(param, weights, thalamus_input, target, FORCE);
+            LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
         
         % calculate the weight difference and update the output weights
         d_output = old_output - output;
@@ -171,7 +176,7 @@ for epoch = 1:N_total
         
         % SIMULATE NETWORK
         [ error, output_weights, Zx, Z_out, tspikes ] =...
-            LIF_spiking_network_v1(param, weights, thalamus_input, target, FORCE);
+            LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
         
         % get the spikinging statistics
         trial_length = length(Z_out);

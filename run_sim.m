@@ -1,5 +1,5 @@
 function [run] = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
-    Winp, alpha, FORCE, makespikes, savefolder)
+    Winp, alpha, Pexc, FORCE, makespikes, savefolder)
 %RUN Summary of this function goes here
 %   Detailed explanation goes here
 %% FORCE training a reservoir of spiking neurons
@@ -23,7 +23,7 @@ dt = 0.05;              % integration time constant
 rate = 3;               % rate
 
 %% Get the combination struct of the scaling parameters
-param_comb = all_comb(Win, G, Q, Winp);
+param_comb = all_comb(Win, G, Q, Winp, Pexc);
 
 %% Prepare a set of train and test trials
 
@@ -44,7 +44,7 @@ parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
 
 mkdir(savefolder)
 
-for i = 1: size(param_comb, 1)
+parfor i = 1: size(param_comb, 1)
     
     % set the scaling parameters
     scale_parameters = struct();
@@ -52,9 +52,10 @@ for i = 1: size(param_comb, 1)
     scale_parameters.G = param_comb(i, 2);
     scale_parameters.Q = param_comb(i, 3);
     scale_parameters.Winp = param_comb(i, 4);
+    scale_parameters.Pexc = param_comb(i, 5);
     
     % run the network
-    run(i).parameters_out = LIF_training_v1(parameters_in,...
+    run(i).parameters_out = LIF_training(parameters_in,...
         scale_parameters, savefolder);
 end
 
