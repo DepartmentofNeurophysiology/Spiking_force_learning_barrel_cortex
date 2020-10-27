@@ -49,9 +49,9 @@ if Pexc == 0
         static(i,QS) = static(i,QS) - sum(static(i,QS))/length(QS);
     end
 else
-    
     % Apply Dale's law
-
+    disp('Dales law is applied')
+    
     % number of exci and ini neurons 
     Nexc = round(Pexc * N);
     Nini = N - Nexc;
@@ -95,7 +95,6 @@ for epoch = 1:N_total
     
     disp(['Epoch nr. ', num2str(epoch)])
     
-    
     % TRAINING
     disp(['Training network, number of trials = ', num2str(N_train)])
     
@@ -131,8 +130,10 @@ for epoch = 1:N_total
         % SIMULATE NETWORK
         % save the old output weights
         old_output = output;
+        
+        disp('no thalamus filter')
         [~, output, ~, ~, ~] =...
-            LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+            LIF_spiking_network_no_input_filter(param, weights, thalamus_input, target, FORCE);
         
         % calculate the weight difference and update the output weights
         d_output = old_output - output;
@@ -175,8 +176,9 @@ for epoch = 1:N_total
             reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate);
         
         % SIMULATE NETWORK
+        disp('no thalamus filter')
         [ error, output_weights, Zx, Z_out, tspikes ] =...
-            LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+            LIF_spiking_network_no_input_filter(param, weights, thalamus_input, target, FORCE);
         
         % get the spikinging statistics
         trial_length = length(Z_out);

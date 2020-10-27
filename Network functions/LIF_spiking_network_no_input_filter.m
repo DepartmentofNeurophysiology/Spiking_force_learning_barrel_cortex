@@ -1,4 +1,4 @@
-function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network(param, weights, thalamus_input, target, FORCE)
+function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network_no_input_filter(param, weights, thalamus_input, target, FORCE)
 %LIF_SPIKING_NETWORK_V1 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -77,8 +77,7 @@ for i = 1:1:nt
     in = ceil(i * dt);
     
     % update the input current of the neurons
-    syn_weights = feedback_weights*Z;
-    I = Ipsc + syn_weights + Ibias;
+    I = Ipsc + feedback_weights*Z + input(:,i) + Ibias;
     dv = (dt*i > tlast + tref).*(-v + I)/tau_m;
     v = v + dt*(dv);
     
@@ -120,13 +119,9 @@ for i = 1:1:nt
     % set the refractory period of the neurons
     tlast = tlast + (dt*i - tlast).*(v >= vthresh);
     
-    % filtered thalamus spikes
-    thalamus_spikes = input(:,i)/(tau_r*tau_d);
-    
     % apply the double exponential filter for the postsynaptic current
     Ipsc = Ipsc*exp(-dt/tau_r) + h*dt;
-    h = h*exp(-dt/tau_d) + Ispikes*(~isempty(spike_index))/(tau_r*tau_d)...
-        + thalamus_spikes;  
+    h = h*exp(-dt/tau_d) + Ispikes*(~isempty(spike_index))/(tau_r*tau_d);  
     
     % filter the spikes of the synaptic output
     r = r*exp(-dt/tau_r) + hr*dt; 
