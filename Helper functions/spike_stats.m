@@ -4,9 +4,14 @@ function [ A_t, ISI, Cv ] = spike_stats( tspike, trial_length , N )
 
 % Average activity
 
+% remove the zero values
+not_null = tspike(:, 1) ~= 0;
+tspike = tspike(not_null, :);
+
 % calculate the spikecounts per neuron
-[A_t, ~] = histcounts(tspike(:,1), 1:1:N + 1); 
-A_t = A_t / (trial_length/1000);
+neurons = tspike(:, 1);
+[A_t, ~] = histcounts(neurons, 1:1:N + 1);
+A_t = A_t / (trial_length*10^-3);
 
 % ISI
 ISI = [];
