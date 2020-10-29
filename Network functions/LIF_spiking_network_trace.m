@@ -1,8 +1,7 @@
-function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network_no_input_filter(param, weights, thalamus_input, target, FORCE)
+function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network_trace(param, weights, neuron_input, target, FORCE)
 %LIF_SPIKING_NETWORK_V1 Summary of this function goes here
 %   Detailed explanation goes here
 
-disp('no thalamus filter')
 %% Network parameters
 
 % input parameters
@@ -40,7 +39,7 @@ input = zeros(N, nt);
 for t = 1:nt 
     
     if mod(t, 1/dt) == 0
-        input(:, t) = thalamus_input(:, t*dt); 
+        input(:, t) = neuron_input(:, t*dt); 
     end
 end
 
@@ -76,9 +75,9 @@ for i = 1:1:nt
     
     % present a new datapoint every 1 ms 
     in = ceil(i * dt);
-   
+    
     % update the input current of the neurons
-    I = Ipsc + feedback_weights*Z + input(:,i) + Ibias;
+    I = Ipsc + feedback_weights*Z + input(:, i) + Ibias;
     dv = (dt*i > tlast + tref).*(-v + I)/tau_m;
     v = v + dt*(dv);
     
@@ -87,19 +86,19 @@ for i = 1:1:nt
     
     % get the increase in current due to spiking and store the spike times
     if ~isempty(spike_index)
-       
-        Ispikes = sum(static_weights(:, spike_index), 2);
         
         if ~FORCE
+            Ispikes = sum(static_weights(:, spike_index), 2);
+        
             tspikes(nspikes+1:nspikes+length(spike_index),:) =...
                 [spike_index, 0*spike_index+dt*i];
-            
+        
             nspikes = nspikes + length(spike_index);
-            
-            %Alternative spike storage
-            %spikes = [spike_index,0*spike_index+dt*i];
-            %tspikes = [tspikes; spikes];
         end
+        
+        %Alternative spikestorage
+        %spikes = [spike_index,0*spike_index+dt*i];
+        %tspikes = [tspikes; spikes];
     end
     %% Implement RLMS with the FORCE method
     

@@ -70,6 +70,9 @@ Z_out = zeros(T,1);
 % initialize the correlation weight matrix for RLMS 
 Pinv = eye(N)*alpha; 
 
+% input trace save
+input_trace = zeros(N, T);
+
 %% MAIN NETWORK LOOP
 for i = 1:1:nt
     
@@ -89,13 +92,16 @@ for i = 1:1:nt
     if ~isempty(spike_index)
        
         Ispikes = sum(static_weights(:, spike_index), 2);
+       
+        if ~FORCE
+            tspikes(nspikes+1:nspikes+length(spike_index),:) =...
+                [spike_index, 0*spike_index+dt*i];
         
-        tspikes(nspikes+1:nspikes+length(spike_index),:) =...
-            [spike_index, 0*spike_index+dt*i];
+            nspikes = nspikes + length(spike_index);
+        end 
+        %Alternative spike storage
         %spikes = [spike_index,0*spike_index+dt*i];
         %tspikes = [tspikes; spikes];
-        
-        nspikes = nspikes + length(spike_index);
     end
     %% Implement RLMS with the FORCE method
     
@@ -122,6 +128,9 @@ for i = 1:1:nt
     
     % filtered thalamus spikes
     thalamus_spikes = input(:,i)/(tau_r*tau_d);
+    
+    % calculate and save the input trace
+    input_trace(:, in) = dt*thalamus_spikes;
     
     % apply the double exponential filter for the postsynaptic current
     Ipsc = Ipsc*exp(-dt/tau_r) + h*dt;
