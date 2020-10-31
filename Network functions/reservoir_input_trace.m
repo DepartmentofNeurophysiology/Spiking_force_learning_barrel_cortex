@@ -1,4 +1,4 @@
-function [ neuron_input, z_all ] = reservoir_input_trace( curve, angle, Ein, pole )
+function [ neuron_input, z_all ] = reservoir_input_trace( curve, angle, Ein, N, pole )
 
 dat = pole;
 whisk_input = [curve; angle];
@@ -38,6 +38,6 @@ z_t(size(neuron_input,2)+constant:1:size(neuron_input,2)+pulse_length+constant) 
 
 z_all = [z_all z_t'];
 
-neuron_input = [neuron_input zeros(2000, reset)];
+neuron_input = [neuron_input zeros(N, reset)];
 
 end

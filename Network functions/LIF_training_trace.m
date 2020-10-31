@@ -98,6 +98,7 @@ end
 
 whiskmat = load(filename);
 whiskmat = whiskmat.filtered_whiskmat;
+input_save = {};
 
 %% Train and test the network
 
@@ -144,7 +145,7 @@ for epoch = 1:N_total
 
         % get the pole location and the input struct and target function
         [neuron_input, target] =...
-            reservoir_input_trace(curve, angle, input, pole); 
+            reservoir_input_trace(curve, angle, input, N, pole); 
         
         % SIMULATE NETWORK
         % save the old output weights
@@ -187,13 +188,19 @@ for epoch = 1:N_total
         trial_index = [session_mat.trialId] == trialId;
         trial_mat = session_mat(trial_index);
         
-        angle = trial_mat.thetaVec;
-        curve = trial_mat.kappaVec;
+        p = 1;
+        [curve, angle] = make_whisker_trace(trial_mat, p);
+        
+        input_save{trial}.angle = angle;
+        input_save{trial}.curve = curve;
+        
 
         % get the pole location and the input struct and target function
         pole = test_trials(trial).ytrain;
         [neuron_input, target] =...
-            reservoir_input_trace(curve, angle, input, pole);
+            reservoir_input_trace(curve, angle, input, N, pole);
+        
+        input_save{trial}.neuron_input = neuron_input;
         
         % SIMULATE NETWORK
         [ err, output_weights, Zx, Z_out, tspikes ] =...
@@ -244,4 +251,7 @@ end
 
  savename = [savefolder f filename '.mat'];
  save(savename, 'training_output', 'scale_param')
+ 
+ savename2 = [savefolder f 'input_save.mat'];
+ save(savename2, 'input_save');
 
