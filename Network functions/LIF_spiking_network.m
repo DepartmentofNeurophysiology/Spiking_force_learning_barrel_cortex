@@ -1,4 +1,4 @@
-function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network(param, weights, thalamus_input, target, FORCE)
+function [error, output_weights, Zx, Z_out, tspikes, input_trace] = LIF_spiking_network(param, weights, thalamus_input, target, FORCE)
 %LIF_SPIKING_NETWORK_V1 Summary of this function goes here
 %   Detailed explanation goes here
 

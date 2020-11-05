@@ -3,7 +3,7 @@ function [ training_output ] = LIF_training(param, scale_param, savefolder)
 %   Detailed explanation goes here
 
 
-
+f = filesep;
 %% Parameters
 
 % input parameters
@@ -88,6 +88,32 @@ weights.output = output;
 train_trials = param.train_trials;
 test_trials = param.test_trials;
 
+%% Load whiskmat 
+if param.makespikes
+    % load the KernelStruct
+    filename = ['.' f 'Input' f 'KernelStruct.mat'];
+
+    if ~exist(filename)
+        error('KernelStruct.mat is not in the input folder')
+    end
+
+    KernelStruct = load(filename);
+    KernelStruct = KernelStruct.KernelStruct;
+
+    % load the whiskmat
+    filename = ['.' f 'Input' f 'whiskmat.mat'];
+
+    if ~exist(filename)
+        error('whiskmat.mat is not in the input folder')
+    end
+
+    whiskmat = load(filename);
+    whiskmat = whiskmat.filtered_whiskmat;
+end
+
+%TODO
+input_save = {};
+
 %% Train and test the network
 
 % run for N amount of epochs
@@ -115,7 +141,8 @@ for epoch = 1:N_total
             
             % get the trial session and create the spikingstruct
             session = train_trials(trial).session;
-            SpikeTrainStruct = make_trial_spikes(session, trialId);
+            SpikeTrainStruct = make_trial_spikes(session, trialId,...
+                whiskmat, KernelStruct);
         else
             % get the struct name and load it
             trial_mat = train_trials(trial).spike_struct;
@@ -132,7 +159,7 @@ for epoch = 1:N_total
         old_output = output;
         
         
-        [~, output, ~, ~, ~] =...
+        [~, output, ~, ~, ~, ~] =...
             LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
         
         % calculate the weight difference and update the output weights
@@ -159,7 +186,8 @@ for epoch = 1:N_total
             
             % get the trial session and create the spikingstruct
             session = test_trials(trial).session;
-            SpikeTrainStruct = make_trial_spikes(session, trialId);
+            SpikeTrainStruct = make_trial_spikes(session, trialId,...
+                whiskmat, KernelStruct);
         else
             % get the struct name and load it
             trial_mat = test_trials(trial).spike_struct;
@@ -176,15 +204,18 @@ for epoch = 1:N_total
             reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate);
         
         % SIMULATE NETWORK
-        [ error, output_weights, Zx, Z_out, tspikes ] =...
+        [ err, output_weights, Zx, Z_out, tspikes, input_trace ] =...
             LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+        
+        %TODO
+        input_save{trial} = input_trace;
         
         % get the spikinging statistics
         trial_length = length(Z_out);
         [ A_t, ISI, Cv ] = spike_stats( tspikes, trial_length , N );
         
         weights.output = output_weights;
-        test_output.error{trial} = error;
+        test_output.error{trial} = err;
         test_output.Zx{trial} = Zx;
         test_output.Z_out{trial} = Z_out;
         test_output.tspikes{trial} = tspikes;
@@ -224,4 +255,8 @@ end
 
  savename = [savefolder f filename '.mat'];
  save(savename, 'training_output', 'scale_param')
+ 
+ %TODO
+ savename2 = [savefolder f 'input_save.mat'];
+ save(savename2, 'input_save');
 

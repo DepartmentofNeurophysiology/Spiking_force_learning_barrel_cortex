@@ -13,6 +13,8 @@ function [ reservoir_input, target_function ] = reservoir_input( SpikeTrainStruc
 % output: is a structure containing the spiking reservoir input and the
 % target function.
 
+rng('shuffle')
+
 %% Create the spiking array of 200 thalamus neurons for the nth trial
 spike_array.trial = zeros(200, length(SpikeTrainStruct{1,1}.PSTH{1,n}));
 

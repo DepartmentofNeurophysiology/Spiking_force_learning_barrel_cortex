@@ -1,8 +1,8 @@
-function [ training_output ] = LIF_training_trace(param, scale_param, savefolder)
+function [ training_output ] = LIF_training_no_input_filter(param, scale_param, savefolder)
 %LIF_TRAINING Summary of this function goes here
 %   Detailed explanation goes here
 
-f = filesep;
+
 
 %% Parameters
 
@@ -88,16 +88,28 @@ weights.output = output;
 train_trials = param.train_trials;
 test_trials = param.test_trials;
 
-%% Load the whiskingmat for the traces
-% load the whiskmat
-filename = ['.' f 'Input' f 'whiskmat.mat'];
+%% Load whiskmat 
+if param.makespikes
+    % load the KernelStruct
+    filename = ['.' f 'Input' f 'KernelStruct.mat'];
 
-if ~exist(filename)
-    error('whiskmat.mat is not in the input folder')
+    if ~exist(filename)
+        error('KernelStruct.mat is not in the input folder')
+    end
+
+    KernelStruct = load(filename);
+    KernelStruct = KernelStruct.KernelStruct;
+
+    % load the whiskmat
+    filename = ['.' f 'Input' f 'whiskmat.mat'];
+
+    if ~exist(filename)
+        error('whiskmat.mat is not in the input folder')
+    end
+
+    whiskmat = load(filename);
+    whiskmat = whiskmat.filtered_whiskmat;
 end
-
-whiskmat = load(filename);
-whiskmat = whiskmat.filtered_whiskmat;
 
 %TODO
 input_save = {};
@@ -120,41 +132,35 @@ for epoch = 1:N_total
     
     % training trials
     for trial = 1:N_train
-
-        % make or load the spikes
-        if param.makespikes
-            disp('no spikes to be made')
-        end
         
-        % get the trial name and curve and angle traces
-        session = train_trials(trial).session;
+        % get the trial name 
         trialId = train_trials(trial).trial;
         
-        % select sessions from the whiskingmat
-        session_index = strcmp({whiskmat.session}, session);
-        session_mat = whiskmat(session_index);
-
-        % select the trial from the sessions
-        trial_index = [session_mat.trialId] == trialId;
-        trial_mat = session_mat(trial_index);
+        % make or load the spikes
+        if param.makespikes
+            
+            % get the trial session and create the spikingstruct
+            session = train_trials(trial).session;
+            SpikeTrainStruct = make_trial_spikes(session, trialId,...
+                whiskmat, KernelStruct);
+        else
+            % get the struct name and load it
+            trial_mat = train_trials(trial).spike_struct;
+            load( ['./Spiking structures/', trial_mat]);
+        end
         
-        % get the pole and whiskertrace
-        pole = train_trials(trial).ytrain;
-        
-        p = 1;
-        [curve, angle] = make_whisker_trace(trial_mat, p);
- 
-
         % get the pole location and the input struct and target function
-        [neuron_input, target] =...
-            reservoir_input_trace(curve, angle, input, N, pole); 
+        pole = train_trials(trial).ytrain;
+        [thalamus_input, target] =...
+            reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate); 
         
         % SIMULATE NETWORK
         % save the old output weights
         old_output = output;
         
+        
         [~, output, ~, ~, ~] =...
-            LIF_spiking_network_trace(param, weights, neuron_input, target, FORCE);
+            LIF_spiking_network_no_input_filter(param, weights, thalamus_input, target, FORCE);
         
         % calculate the weight difference and update the output weights
         d_output = old_output - output;
@@ -171,42 +177,37 @@ for epoch = 1:N_total
     
     % validation trials
     for trial = 1:N_test
-
+        
+        % get the trial name 
+        trialId = test_trials(trial).trial;
+        
         % make or load the spikes
         if param.makespikes
-            disp('no spikes to be made')
+            
+            % get the trial session and create the spikingstruct
+            session = test_trials(trial).session;
+            SpikeTrainStruct = make_trial_spikes(session, trialId,...
+                whiskmat, KernelStruct);
+        else
+            % get the struct name and load it
+            trial_mat = test_trials(trial).spike_struct;
+            load( ['./Spiking structures/', trial_mat]);
         end
         
-        % get the trial name and curve and angle traces
-        session = test_trials(trial).session;
-        trialId = test_trials(trial).trial;
+        % save the validation trials and firs touches
+        test_output.trials{trial} = trialId;
         test_output.first_touches(trial,1) = test_trials(trial).first_touch;
         
-        % select sessions from the whiskingmat
-        session_index = strcmp({whiskmat.session}, session);
-        session_mat = whiskmat(session_index);
-
-        % select the trial from the sessions
-        trial_index = [session_mat.trialId] == trialId;
-        trial_mat = session_mat(trial_index);
-        
-        p = 1;
-        [curve, angle] = make_whisker_trace(trial_mat, p);
-        
-        input_save{trial}.angle = angle;
-        input_save{trial}.curve = curve;
-        
-
         % get the pole location and the input struct and target function
         pole = test_trials(trial).ytrain;
-        [neuron_input, target] =...
-            reservoir_input_trace(curve, angle, input, N, pole);
-        
-        input_save{trial}.neuron_input = neuron_input;
+        [thalamus_input, target] =...
+            reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate);
+        %TODO
+        input_save{trial} = thalamus_input;
         
         % SIMULATE NETWORK
         [ err, output_weights, Zx, Z_out, tspikes ] =...
-            LIF_spiking_network_trace(param, weights, neuron_input, target, FORCE);
+            LIF_spiking_network_no_input_filter(param, weights, thalamus_input, target, FORCE);
         
         % get the spikinging statistics
         trial_length = length(Z_out);
@@ -254,9 +255,9 @@ end
  savename = [savefolder f filename '.mat'];
  save(savename, 'training_output', 'scale_param')
  
- 
  %TODO
  savename2 = [savefolder f 'input_save.mat'];
  save(savename2, 'input_save');
+ 
  
 
