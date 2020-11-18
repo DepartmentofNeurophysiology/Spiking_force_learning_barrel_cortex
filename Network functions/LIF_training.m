@@ -208,7 +208,10 @@ for epoch = 1:N_total
             LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
         
         %TODO
-        input_save{trial} = input_trace;
+        %{
+        input_save{trial}.neuron_input = thalamus_input;
+        input_save{trial}.syn_input = input_trace;
+        %}
         
         % get the spikinging statistics
         trial_length = length(Z_out);
@@ -255,8 +258,9 @@ end
 
  savename = [savefolder f filename '.mat'];
  save(savename, 'training_output', 'scale_param')
- 
+ %{
  %TODO
  savename2 = [savefolder f 'input_save.mat'];
  save(savename2, 'input_save');
+ %}
 

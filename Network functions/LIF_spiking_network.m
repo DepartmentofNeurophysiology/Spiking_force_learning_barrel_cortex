@@ -150,6 +150,9 @@ end
 s_t = length(Zx) - 800 - 500; 
 error = immse(Z_out(s_t:end)', Zx(s_t:end));
 
+% remove the zeros from the tspikes struct
+tspikes = tspikes((tspikes(:, 1) ~= 0), :);
+
 end
 
 
