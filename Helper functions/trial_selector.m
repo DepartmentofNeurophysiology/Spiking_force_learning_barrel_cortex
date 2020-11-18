@@ -3,6 +3,8 @@ function [shuffled_train, shuffled_val] =...
 %TRIAL_SHUFFLE Summary of this function goes here
 %   Detailed explanation goes here
 
+rng('shuffle')
+
 % check if the max amount of trials is exceeded?
 
 % create indices lists for both conditions
