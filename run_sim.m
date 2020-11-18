@@ -20,7 +20,7 @@ tau_r = 2;              % synaptic rise
 Ibias = -40;            % bias current
 step = 20;              % learning step
 dt = 0.05;              % integration time constant
-rate = 3;               % rate
+rate = 2;               % rate
 
 %% Get the combination struct of the scaling parameters
 param_comb = all_comb(Win, G, Q, Winp, Pexc);
@@ -33,7 +33,24 @@ load('trainable_trials')
 % get the shuffled train and test trials in the ratio 1:1, prox:dist
 [train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
     trainable_trials.dist_no_touch, N_train, N_test);
+%{
+%TODO
+disp('fixed test trials, N_test = 2')
+test_trials(1).trial = 26;  
+test_trials(1).session = 'an171923_20120604';
+test_trials(1).spike_struct = '2465.mat';
+test_trials(1).ytrain = [-1,54488];
+test_trials(1).first_touch = [482];
+test_trials(1).pole_times = [1352,3380];
 
+test_trials(2).trial = 13;
+test_trials(2).session = 'an171923_20120604';
+test_trials(2).spike_struct = '2138.mat';
+test_trials(2).ytrain = [1,155489];
+test_trials(2).first_touch = 0;
+test_trials(2).pole_times = [1362,3388];
+%}
+    
 %% Prepare input struct
 parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
     'N_test', N_test, 'N_total', N_total, 'tau_d', tau_d,...
@@ -44,7 +61,7 @@ parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
 
 mkdir(savefolder)
 
-parfor i = 1: size(param_comb, 1)
+for i = 1: size(param_comb, 1)
     
     % set the scaling parameters
     scale_parameters = struct();
