@@ -1,27 +1,6 @@
-function [SpikingStruct] = make_trial_spikes(session, trialId)
+function [SpikingStruct] = make_trial_spikes(session, trialId, whiskmat, KernelStruct)
 %MAKE_TRIAL_SPIKES Summary of this function goes here
 %   Detailed explanation goes here
-f = filesep;
-
-% load the KernelStruct
-filename = ['.' f 'Input' f 'KernelStruct.mat'];
-
-if ~exist(filename)
-    error('KernelStruct.mat is not in the input folder')
-end
-
-KernelStruct = load(filename);
-KernelStruct = KernelStruct.KernelStruct;
-
-% load the whiskmat
-filename = ['.' f 'Input' f 'whiskmat.mat'];
-
-if ~exist(filename)
-    error('whiskmat.mat is not in the input folder')
-end
-
-whiskmat = load(filename);
-whiskmat = whiskmat.filtered_whiskmat;
 
 % select sessions from the whiskingmat
 session_index = find(strcmp({whiskmat.session}, session));

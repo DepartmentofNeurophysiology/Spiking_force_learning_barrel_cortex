@@ -115,17 +115,24 @@ else
 end
 
 %% Convolve recordings with relevant kernel
+% Also calculate the combined convolved signal of both signal dimensions 
+% using the dimension factor 
 la = sum(KernelStruct.kerneltime<0);
 lc = sum(KernelStruct.kerneltime>0);
 ConvTrace = cell(Nkernel, Ntrace);
+comConvTrace = cell(Nkernel, Ntrace);
 for nk = 1:Nkernel
     for nt = 1:Ntrace
         ConvTrace{nk,nt} = nan*ones(Ndimw, length(WhiskerStruct.Recording{nd,nt}));
+        comConvTrace{nk,nt} = zeros(1, length(WhiskerStruct.Recording{nd,nt}));
         for nd = 1:Ndimw  
             ConvTrace{nk,nt}(nd,:) = convolve_kernel_acausal( WhiskerStruct.Recording{nd,nt}, KernelStruct.Kernels{nk, nd}, la, lc);
+            comConvTrace{nk,nt} = comConvTrace{nk,nt} + KernelStruct.ActivationFunction.Params{nk}{nd}.dimfactor*ConvTrace{nk,nt}(nd,:);
         end
     end
 end
+
+SpikeTrainStruct.ConvTrace = comConvTrace;
 %% Apply activation function 
 SpikeTrainStruct.PSTH = cell(Nkernel, Ntrace);
 for nk = 1:Nkernel
@@ -265,11 +272,13 @@ if max(pspike)>1
     disp('Warning: Pspike has values larger than 1; should not be possible! Reduce scaling.')
     disp(['max(Pspike) = ', num2str(max(pspike))])
 end
+
 if min(pspike)<0
     disp('Warning: Pspike has values smaller than 0; should not be possible!')
     disp(['min(Pspike) = ', num2str(min(pspike))])
     keyboard
 end
+
     
 %% Make spikes
 for ntr = 1:Ntrial

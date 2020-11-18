@@ -1,4 +1,4 @@
-function PSTH = activation_Petersen_2008_ND(ConvTrace, Params)
+function [PSTH] = activation_Petersen_2008_ND(ConvTrace, Params)
 % Input: 
 % * ConvTrace: ConvTrace = NdimxNtime array with a grid displacement recording convolved with a grid displacement kernel
 % * Params{dimension}: Parameters of the activation function for the
@@ -17,9 +17,11 @@ end
 PSTH = zeros(1,Ntime);
 
 PSTHperdim = cell(1,Ndimp);
+
 for nd = 1:Ndimp
     % Calculate a PSTH per dimension
     PSTHperdim{nd} = zeros(1,Ntime);
+
     for ndp = 1:2
         PSTHperdim{nd} = PSTHperdim{nd}+Params{nd}.k(ndp)./((1+Params{nd}.q(ndp).*exp(-Params{nd}.b(ndp).*ConvTrace(nd,:))).^Params{nd}.v(ndp));
     end
