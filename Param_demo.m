@@ -6,7 +6,7 @@
 
 %% - Add paths
 f = filesep;
-main_dir = 'Param_demo_PSTH';
+main_dir = 'Param_demo_thalamus_scaled';
 mkdir(['Output' f main_dir])
 
 %% - Save files
@@ -56,25 +56,25 @@ run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
 % varying parameters
 G = [10];        % scales the static weights
 Q = [0];         % scales the feedback weights
-Win = [0:0.0001:0.001];       % scales the input weights
+Win = [0:0.1:1];       % scales the input weights
 Winp = [1];      % network sparsity
 
 %% --- Run varying Win
-run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
+run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
     alpha, Pexc, FORCE, makespikes, savefolder_Win);
 
 %% -- Varying Winp
-%{
+
 % varying parameters
 G = [10];        % scales the static weights
 Q = [0];         % scales the feedback weights
-Win = [0.02];       % scales the input weights
-Winp = [0:0.01:0.1];      % network sparsity
+Win = [0.5];       % scales the input weights
+Winp = [0:0.1:1];      % network sparsity
 
 %% --- Run varying Winp
-run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
+run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
     alpha, Pexc, FORCE, makespikes, savefolder_Winp);
-%}
+
 %% -- Varying Q
 %{
 % varying parameters
@@ -91,6 +91,7 @@ run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
 %% -- Plots
 
 % Plot varying G
+%{
 figure
 subplot(2,2,1)
 param_name = 'G';
@@ -101,6 +102,7 @@ cv_G_plot(savefolder_G, N_total, N_test)
 
 subplot(2,2,3)
 cv_hist_plot(savefolder_G, N_total, N_test)
+%}
 
 % Plot varying Win
 figure 
@@ -114,9 +116,10 @@ param_name = 'Winp';
 scale_param_plot(savefolder_Winp, param_name, N_total, N_test)
 
 % Plot varying Q
+%{
 figure
 cdf_Q_plot(savefolder_Q, N_total, N_test)
-
+%}
 %% Helper functions
 
 function colormat = make_colors(Nvar, colorscheme)

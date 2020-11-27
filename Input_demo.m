@@ -16,7 +16,7 @@ disp('Remember to adjust the training files to save the network input')
 pause;
 %% Add paths
 f = filesep;
-main_dir = 'Input_demo_var';
+main_dir = 'Input_demo_scaled';
 mkdir(['Output' f main_dir])
 
 %% Save files
@@ -50,7 +50,7 @@ makespikes = false; % make the trial spiking structures
 Pexc = 0; 
 
 %% Filtered trace
-Win = 100;
+Win = 0.2;
 run_filter = run_sim_filter(N, N_th, N_train, N_test, N_total, Win, G,...
     Q, Winp, alpha, Pexc, FORCE, makespikes, savefolder_filter);
 
@@ -60,7 +60,7 @@ run_trace = run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G,...
     Q, Winp, alpha, Pexc, FORCE, makespikes, savefolder_PSTH);
 
 %% Thalamus spikes
-Win = 0.5;
+Win = 0.05;
 run_thalamus = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
     Winp, alpha, Pexc, FORCE, makespikes, savefolder_thalamus);
 
