@@ -1,4 +1,4 @@
-function [ acc ] = val_acc(test_trials, network_output, target, first_touches )
+function [ acc ] = val_acc(test_trials, network_output, target, first_touches)
 % Calculate the validation accuracy 
 
 %% Calculate the mean value each trial

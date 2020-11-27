@@ -34,22 +34,23 @@ load('trainable_trials')
 [train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
     trainable_trials.dist_no_touch, N_train, N_test);
 
-%{
-%TODO
-disp('fixed test trials, N_test = 2')
-test_trials(1).trial = 26;  
-test_trials(1).session = 'an171923_20120604';
-test_trials(1).spike_struct = '2465.mat';
-test_trials(1).ytrain = [-1,54488];
-test_trials(1).first_touch = [482];
-test_trials(1).pole_times = [1352,3380];
 
-test_trials(2).trial = 13;
-test_trials(2).session = 'an171923_20120604';
-test_trials(2).spike_struct = '2138.mat';
-test_trials(2).ytrain = [1,155489];
+%TODO
+%{
+disp('fixed test trials, N_test = 2')
+test_trials(1).trial = 80;  
+test_trials(1).session = 'an171923_20120607';
+test_trials(1).spike_struct = '101.mat';
+test_trials(1).ytrain = [-1 77995];
+test_trials(1).first_touch = 1892;
+test_trials(1).pole_times = [1388 3342];
+
+test_trials(2).trial = 129;
+test_trials(2).session = 'an171923_20120613';
+test_trials(2).spike_struct = '330.mat';
+test_trials(2).ytrain = [1 152505];
 test_trials(2).first_touch = 0;
-test_trials(2).pole_times = [1362,3388];
+test_trials(2).pole_times = [1354 3378];
 %}
     
 %% Prepare input struct
