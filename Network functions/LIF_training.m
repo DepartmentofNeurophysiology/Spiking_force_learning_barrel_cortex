@@ -2,7 +2,6 @@ function [ training_output ] = LIF_training(param, scale_param, savefolder)
 %LIF_TRAINING Summary of this function goes here
 %   Detailed explanation goes here
 
-
 f = filesep;
 %% Parameters
 
@@ -93,7 +92,7 @@ if param.makespikes
     % load the KernelStruct
     filename = ['.' f 'Input' f 'KernelStruct.mat'];
 
-    if ~exist(filename)
+    if ~exist(filename, 'file')
         error('KernelStruct.mat is not in the input folder')
     end
 
@@ -103,7 +102,7 @@ if param.makespikes
     % load the whiskmat
     filename = ['.' f 'Input' f 'whiskmat.mat'];
 
-    if ~exist(filename)
+    if ~exist(filename, 'file')
         error('whiskmat.mat is not in the input folder')
     end
 
@@ -112,8 +111,9 @@ if param.makespikes
 end
 
 %TODO
+%{
 input_save = {};
-
+%}
 %% Train and test the network
 
 % run for N amount of epochs
@@ -152,7 +152,7 @@ for epoch = 1:N_total
         % get the pole location and the input struct and target function
         pole = train_trials(trial).ytrain;
         [thalamus_input, target] =...
-            reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate); 
+            reservoir_input_scaled(SpikeTrainStruct, 1, input, N, pole, rate); 
         
         % SIMULATE NETWORK
         % save the old output weights
@@ -201,7 +201,7 @@ for epoch = 1:N_total
         % get the pole location and the input struct and target function
         pole = test_trials(trial).ytrain;
         [thalamus_input, target] =...
-            reservoir_input(SpikeTrainStruct, 1, input, N, pole, rate);
+            reservoir_input_scaled(SpikeTrainStruct, 1, input, N, pole, rate);
         
         % SIMULATE NETWORK
         [ err, output_weights, Zx, Z_out, tspikes, input_trace ] =...
@@ -256,11 +256,12 @@ for i = 1 : length(field_names)
     filename = [filename str];
 end
 
- savename = [savefolder f filename '.mat'];
- save(savename, 'training_output', 'scale_param')
- %{
- %TODO
- savename2 = [savefolder f 'input_save.mat'];
- save(savename2, 'input_save');
- %}
+savename = [savefolder f filename '.mat'];
+save(savename, 'training_output', 'scale_param')
+ 
+%TODO
+%{
+savename2 = [savefolder f 'input_save.mat'];
+save(savename2, 'input_save');
+%} 
 

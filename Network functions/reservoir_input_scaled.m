@@ -1,4 +1,4 @@
-function [ reservoir_input, target_function ] = reservoir_input( SpikeTrainStruct, n, Ein, N, dat, rate )
+function [ reservoir_input, target_function ] = reservoir_input_scaled( SpikeTrainStruct, n, Ein, N, dat, rate )
 % Function that takes the nth thalamic spike times and makes neuron spiking
 % input for the reservoir and returns this. 
 
@@ -13,8 +13,8 @@ function [ reservoir_input, target_function ] = reservoir_input( SpikeTrainStruc
 % output: is a structure containing the spiking reservoir input and the
 % target function.
 
-rng('shuffle')
-
+%rng('shuffle')
+disp('input scaled')
 %% Create the spiking array of 200 thalamus neurons for the nth trial
 spike_array.trial = zeros(200, length(SpikeTrainStruct{1,1}.PSTH{1,n}));
 
@@ -22,16 +22,28 @@ for i = 1:200
     spike_array.trial(i,SpikeTrainStruct{1, 1}.SpikeTimes{i, n}) = ones(length(SpikeTrainStruct{1, 1}.SpikeTimes{i, n}) ,1);
 end
 %% Create the neuron input by multiplying with the input weights matrix
-spike_array.neuron_input = zeros(N,length(spike_array.trial));
+%spike_array.neuron_input = zeros(N,length(spike_array.trial));
 
+% scale the ConvTrace input
+spikes_scaled = zeros(size(spike_array.trial));
+spike_mean = mean(spike_array.trial, 'all');
+spike_std = std(spike_array.trial, 0, 'all');
 
+for i = 1:200
+    spike_signal = spike_array.trial(i,:);
+    spikes_scaled(i, :) = (spike_signal - spike_mean)/spike_std;
+end
+
+spike_array.neuron_input = Ein*spikes_scaled;
+
+%{
 for t=1:length(spike_array.trial)
     index_input = find(spike_array.trial(:,t) == 1);  % Find thalamic input neurons that have spiked
     if length(index_input) ~= 0
         spike_array.neuron_input(:,t) = sum(Ein(:,index_input),2);
     end
 end
-
+%}
 
 %% Pulse parameters
 reset = 1500; % Time inbetween the trials
@@ -68,6 +80,7 @@ z_t(size(spike_array.neuron_input,2)+constant:1:size(spike_array.neuron_input,2)
 z_all = [z_all z_t'];
 
 % make the poisson input
+%{
 for n = 1:200
     vt = rand(size(T_vec) - [0 1]);
     spikes = (rate*dt) > vt;
@@ -76,8 +89,8 @@ end
 [ poisson_input] = make_poisson_spikes_weighted(N, Ein, reset, thalamus_poisson);
 
 neuron_input = [neuron_input spike_array.neuron_input poisson_input];
-
-reservoir_input = neuron_input;
+%}
+reservoir_input = [spike_array.neuron_input zeros(N, reset)];
 target_function = z_all;
 
 

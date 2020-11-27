@@ -147,8 +147,9 @@ for i = 1:1:nt
 end
 
 % Mean Square Error between network output and target
-s_t = length(Zx) - 800 - 500; 
-error = immse(Z_out(s_t:end)', Zx(s_t:end));
+%s_t = length(Zx) - 800 - 500; 
+%error = immse(Z_out(s_t:end)', Zx(s_t:end));
+error = immse(Z_out(1000:end)', Zx(1000:end));
 
 % remove the zeros from the tspikes struct
 tspikes = tspikes((tspikes(:, 1) ~= 0), :);

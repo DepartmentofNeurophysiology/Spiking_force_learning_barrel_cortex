@@ -114,8 +114,9 @@ if param.makespikes
 end
 
 %TODO
+%{
 input_save = {};
-
+%}
 %% Train and test the network
 
 % run for N amount of epochs
@@ -146,7 +147,7 @@ for epoch = 1:N_total
         % get the pole location and the input struct and target function
         pole = train_trials(trial).ytrain;
         [neuron_input, target] =...
-            reservoir_input_PSTH(SpikeTrainStruct, input, N, pole); 
+            reservoir_input_PSTH_scaled(SpikeTrainStruct, input, N, pole); 
         
         % SIMULATE NETWORK
         % save the old output weights
@@ -187,7 +188,7 @@ for epoch = 1:N_total
         % get the pole location and the input struct and target function
         pole = test_trials(trial).ytrain;
         [neuron_input, target] =...
-            reservoir_input_PSTH(SpikeTrainStruct, input, N, pole);
+            reservoir_input_PSTH_scaled(SpikeTrainStruct, input, N, pole);
         
         % SIMULATE NETWORK
         [ err, output_weights, Zx, Z_out, tspikes, input_trace] =...
@@ -245,8 +246,9 @@ end
  savename = [savefolder f filename '.mat'];
  save(savename, 'training_output', 'scale_param')
  
- %{
+ 
  %TODO
+ %{
  savename2 = [savefolder f 'input_save.mat'];
  save(savename2, 'input_save');
  %}
