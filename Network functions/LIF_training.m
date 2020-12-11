@@ -189,19 +189,17 @@ for epoch = 1:N_total
         
         % SIMULATE NETWORK
         if strcmp('spikes', input_type)
-            [ err, output_weights, Zx, Z_out, tspikes, input_trace ] =...
+            [ err, output_weights, Zx, Z_out, tspikes] =...
                 LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
         else
-            [ err, output_weights, Zx, Z_out, tspikes, input_trace] =...
+            [ err, output_weights, Zx, Z_out, tspikes] =...
             LIF_spiking_network_no_filt(param, weights, thalamus_input, target, FORCE);
         end
         
         %TODO
         %{
         input_save{trial}.neuron_input = thalamus_input;
-        input_save{trial}.syn_input = input_trace;
         %}
-        
         % get the spikinging statistics
         trial_length = length(Z_out);
         [ A_t, ISI, Cv ] = spike_stats( tspikes, trial_length , N );

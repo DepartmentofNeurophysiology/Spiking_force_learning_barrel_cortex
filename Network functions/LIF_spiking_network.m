@@ -1,4 +1,4 @@
-function [error, output_weights, Zx, Z_out, tspikes, input_trace] = LIF_spiking_network(param, weights, thalamus_input, target, FORCE)
+function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network(param, weights, thalamus_input, target, FORCE)
 %LIF_SPIKING_NETWORK_V1 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -70,9 +70,6 @@ Z_out = zeros(T,1);
 % initialize the correlation weight matrix for RLMS 
 Pinv = eye(N)*alpha; 
 
-% input trace save
-input_trace = zeros(N, T);
-
 %% MAIN NETWORK LOOP
 for i = 1:1:nt
     
@@ -128,9 +125,6 @@ for i = 1:1:nt
     
     % filtered thalamus spikes
     thalamus_spikes = input(:,i)/(tau_r*tau_d);
-    
-    % calculate and save the input trace
-    input_trace(:, in) = dt*thalamus_spikes;
     
     % apply the double exponential filter for the postsynaptic current
     Ipsc = Ipsc*exp(-dt/tau_r) + h*dt;
