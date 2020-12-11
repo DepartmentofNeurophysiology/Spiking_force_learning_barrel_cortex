@@ -1,12 +1,11 @@
-function [run] = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
-    Winp, alpha, Pexc, FORCE, makespikes, savefolder)
+function run = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
+    Winp, alpha, Pexc, FORCE, makespikes, input_type, savefolder)
 %RUN Summary of this function goes here
 %   Detailed explanation goes here
 %% FORCE training a reservoir of spiking neurons
 % Explanation of the file here
 
 %% Add subfolders and import data
-
 addpath(genpath('Spiking structures'))
 addpath(genpath('Helper data'))
 addpath(genpath('Helper functions'))
@@ -14,7 +13,7 @@ addpath(genpath('Thalamus functions'))
 addpath(genpath('Network functions'))
 addpath(genpath('Parameter schemes'))
 
-%% Parameters
+%% Fixed Parameters
 tau_d = 50;             % synaptic decay
 tau_r = 2;              % synaptic rise
 Ibias = -40;            % bias current
@@ -28,7 +27,8 @@ param_comb = all_comb(Win, G, Q, Winp, Pexc);
 %% Prepare a set of train and test trials
 
 % load list of trial names
-load('trainable_trials')
+file = load('trainable_trials');
+trainable_trials = file.trainable_trials;
 
 % get the shuffled train and test trials in the ratio 1:1, prox:dist
 [train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
@@ -56,13 +56,13 @@ test_trials(2).pole_times = [1354 3378];
 parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
     'N_test', N_test, 'N_total', N_total, 'tau_d', tau_d,...
     'alpha', alpha, 'FORCE', FORCE, 'makespikes', makespikes,...
-    'Ibias', Ibias, 'step', step, 'dt', dt, 'rate', rate, 'tau_r', tau_r,...
-    'train_trials', train_trials, 'test_trials', test_trials);
+    'input_type', input_type, 'Ibias', Ibias, 'step', step, 'dt', dt,...
+    'rate', rate, 'tau_r', tau_r,'train_trials', train_trials, 'test_trials', test_trials);
 %% Train and test the network
-
 mkdir(savefolder)
+run = cell(1, size(param_comb, 1)); 
 
-parfor i = 1: size(param_comb, 1)
+for i = 1: size(param_comb, 1)
     
     % set the scaling parameters
     scale_parameters = struct();

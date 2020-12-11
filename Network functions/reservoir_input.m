@@ -1,4 +1,4 @@
-function [ reservoir_input, target_function ] = reservoir_input( SpikeTrainStruct, n, Ein, N, dat, rate )
+function [reservoir_input, target_function ] = reservoir_input(SpikeTrainStruct, Ein, N, N_th, dat, rate, input_type)
 % Function that takes the nth thalamic spike times and makes neuron spiking
 % input for the reservoir and returns this. 
 
@@ -13,32 +13,15 @@ function [ reservoir_input, target_function ] = reservoir_input( SpikeTrainStruc
 % output: is a structure containing the spiking reservoir input and the
 % target function.
 
-rng('shuffle')
-
-%% Create the spiking array of 200 thalamus neurons for the nth trial
-spike_array.trial = zeros(200, length(SpikeTrainStruct{1,1}.PSTH{1,n}));
-
-for i = 1:200
-    spike_array.trial(i,SpikeTrainStruct{1, 1}.SpikeTimes{i, n}) = ones(length(SpikeTrainStruct{1, 1}.SpikeTimes{i, n}) ,1);
-end
-%% Create the neuron input by multiplying with the input weights matrix
-spike_array.neuron_input = zeros(N,length(spike_array.trial));
-
-
-for t=1:length(spike_array.trial)
-    index_input = find(spike_array.trial(:,t) == 1);  % Find thalamic input neurons that have spiked
-    if length(index_input) ~= 0
-        spike_array.neuron_input(:,t) = sum(Ein(:,index_input),2);
-    end
-end
-
-
-%% Pulse parameters
-reset = 1500; % Time inbetween the trials
+%% Target pulse
+trial_len = length(SpikeTrainStruct{1}.PSTH{1});
 pulse_length = 1000; % Length of pulse
 amp = 2; % Amplitude of pulse
 decay = 200; % decay of exponential pulse
 constant = 100; % How long the pulse is kept constant
+reset = 1500; % Time inbetween the trials
+dt = 0.001;                                     % 1 msec                          
+T_vec = 0:dt:reset*dt;                         % a vector with each time step	
 
 % if SpikeTrainStruct{1, 1}.first_touch == 0
 %     first_touch = 1000;
@@ -49,37 +32,96 @@ constant = 100; % How long the pulse is kept constant
 % end
 first_touch = 500;
 
-neuron_input = [];
 z_all = [];
 start_early = 500; % How long to start before the end of the input
-dt = 0.001;                                     % 1 msec                          
-T_vec = 0:dt:reset*dt;                         % a vector with each time step	
-%% Make the reservoir input and the target function
 
-l_t = size(spike_array.neuron_input,2) + reset;
+%% Make the reservoir input and the target function
+l_t = trial_len + reset;
 
 z_t = zeros(l_t,1);
-% z_t(size(spike_array.neuron_input,2)-start_early:1:size(spike_array.neuron_input,2)+constant) = dat{1}(1)*amp*ones(start_early+constant+1,1);
-% z_t(size(spike_array.neuron_input,2)+constant:1:size(spike_array.neuron_input,2)+pulse_length+constant) =  dat{1}(1)*amp*exp(-(0:1:pulse_length)./decay);
 
-z_t(first_touch:size(spike_array.neuron_input,2)+constant) = -dat(1)*amp*ones(length(first_touch:size(spike_array.neuron_input,2)+constant),1);
-z_t(size(spike_array.neuron_input,2)+constant:1:size(spike_array.neuron_input,2)+pulse_length+constant) =  -dat(1)*amp*exp(-(0:1:pulse_length)./decay);
+% from 500ms (first toucht|) to the end of the input signal + a constant of
+% 100ms
+z_t(first_touch:trial_len+constant) = -dat(1)*amp*ones(length(first_touch:trial_len+constant),1);
+% from the end of the input signal + a constant of 100ms until the end of
+% the pulse length + constant of 100ms
+z_t(trial_len+constant:1:trial_len+pulse_length+constant) =  -dat(1)*amp*exp(-(0:1:pulse_length)./decay);
 
 z_all = [z_all z_t'];
-
-% make the poisson input
-for n = 1:200
-    vt = rand(size(T_vec) - [0 1]);
-    spikes = (rate*dt) > vt;
-    thalamus_poisson(n).spike_times = find( spikes == 1);
-end
-[ poisson_input] = make_poisson_spikes_weighted(N, Ein, reset, thalamus_poisson);
-
-neuron_input = [neuron_input spike_array.neuron_input poisson_input];
-
-reservoir_input = neuron_input;
 target_function = z_all;
+%% Neuron Input
+% load the scale values file if necessary
+%f = filesep;
+%addpath(['..' f 'Helper data'])
+if ~strcmp('spikes', input_type)
+    filename = 'scale_values.mat';
+    if ~exist(filename, 'file')
+        error([filename ' is not in the helper data folder'])
+    else
+        file = load(filename);
+        scale_values = file.ScaleVal;
+   end 
+end
 
+% ConvTrace condition reservoir input
+if strcmp('ConvTrace', input_type)
+    ConvTrace = zeros(N_th, trial_len);
+    for n = 1:N_th
+        ConvTrace(n, :) = SpikeTrainStruct{1}.ConvTrace{n};
+    end
+    neuron_input = Ein*ConvTrace;
+    
+    % scale input signal
+    scaled_neuron_input = scale_input(neuron_input, scale_values, 'ConvTrace');
+    mu = scale_values.spikes.mu;
+   
+    reservoir_input = [scaled_neuron_input ones(N, reset)*mu];
+    %disp('ConvTrace')
+
+% PSTH condition reservoir input
+elseif strcmp('PSTH', input_type)
+    PSTH = zeros(N_th, trial_len);
+    for n = 1:N_th
+        PSTH(n, :) = SpikeTrainStruct{1}.PSTH{n};
+    end
+    neuron_input = Ein*PSTH;
+    scaled_neuron_input = scale_input(neuron_input, scale_values, 'PSTH');
+    mu = scale_values.spikes.mu;
+   
+    reservoir_input = [scaled_neuron_input ones(N, reset)*mu];
+    %disp('PSTH')
+
+% spike condition reservoir input
+elseif strcmp('spikes', input_type)
+    spikes_mat = zeros(N_th, trial_len);
+    for n = 1:N_th
+        spiketimes = SpikeTrainStruct{1}.SpikeTimes{n};
+        spikes_mat(n, spiketimes) = ones(length(spiketimes) ,1);
+    end
+    neuron_input = Ein*spikes_mat;
+    
+    % make the poisson input
+    rng('shuffle')
+    for n = 1:N_th
+        vt = rand(size(T_vec) - [0 1]);
+        spikes = (rate*dt) > vt;
+        thalamus_poisson(n).spike_times = find( spikes == 1);
+    end
+    poisson_input = make_poisson_spikes_weighted(N, Ein, reset, thalamus_poisson);
+    reservoir_input = [neuron_input poisson_input];
+    %disp('Spikes')
+end
 
 end
+
+%% Helper functions
+function scaled = scale_input(neuron_input, scale_values, name)
+% scales the input of a given signal to the spike signal
+
+    temp = getfield(scale_values, name);
+    spikes = scale_values.spikes;
+    scaled = (neuron_input - temp.mu)./temp.sigma;
+    scaled = (scaled*spikes.sigma) + spikes.mu;
+end
+
 

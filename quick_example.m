@@ -19,12 +19,13 @@ Winp = [1];      % network sparsity
 alpha = 0.05;    % learning rate
 
 % logicals
-FORCE = false;   % apply FORCE learning during trials
+FORCE = true;   % apply FORCE learning during trials
 makespikes = false; % make the trial spiking structures 
+input_type = 'ConvTrace'; % options: 'ConvTrace', 'PSTH', 'spikes'
 
 % percentage of excitatory neurons if Dale's law is applied
 Pexc = 0;     % set to 0 to ignore Dale's law restrictions
 %% run the simulation
 run = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
-    alpha, Pexc, FORCE, makespikes, savefolder);
+    alpha, Pexc, FORCE, makespikes, input_type, savefolder);
 

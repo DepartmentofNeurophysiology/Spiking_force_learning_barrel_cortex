@@ -17,28 +17,23 @@ N_test = param.N_test;
 Win = scale_param.Win;
 G = scale_param.G;
 Q = scale_param.Q;
-
-% set the static network sparsity
-p = 0.1;
-
-% set input network sparsity
 Winp = scale_param.Winp;
-
-% set Pexc
 Pexc = scale_param.Pexc;
 
-% number of network outputs 
+% reservoir sparsity, number of outputs
+p = 0.1;
 k = 1;
+
+% input type
+input_type = param.input_type;
 
 %% Initialize matrix weights
 
 % input weights
 input = Win.*rand(N,N_th).*(rand(N,N_th) < Winp); 
 
-rng('shuffle')
-
 % static weights
-
+rng('shuffle')
 if Pexc == 0
     static =  G*(randn(N,N)).*(rand(N,N)<p)/(sqrt(N)*p);
 
@@ -66,10 +61,9 @@ else
         row_sum = sum(static_exc(i, :)) + sum(static_ini(i, :));
         static_ini(i, QS) = static_ini(i, QS) - row_sum/length(QS);
     end
-
+    
     static = [static_exc static_ini];
 end
-
 
 % feedback weights
 feedback = Q*(2*rand(N,k)-1);
@@ -88,7 +82,7 @@ train_trials = param.train_trials;
 test_trials = param.test_trials;
 
 %% Load whiskmat 
-if param.makespikes
+if param.makespikes || strcmp('ConvTrace', input_type) || strcmp('PSTH', input_type)
     % load the KernelStruct
     filename = ['.' f 'Input' f 'KernelStruct.mat'];
 
@@ -109,35 +103,24 @@ if param.makespikes
     whiskmat = load(filename);
     whiskmat = whiskmat.filtered_whiskmat;
 end
-
-%TODO
-%{
-input_save = {};
-%}
 %% Train and test the network
 
 % run for N amount of epochs
 for epoch = 1:N_total
-    
     disp(['Epoch nr. ', num2str(epoch)])
-    
-    % TRAINING
+   
+    % ----------------------------TRAINING---------------------------------
     disp(['Training network, number of trials = ', num2str(N_train)])
     
     % apply FORCE learning
     FORCE = param.FORCE;
-    
-    % weight change storage variable
     weight_change = zeros(N_train, 1);
     
-    % training trials
     for trial = 1:N_train
         
-        % get the trial name 
+        % NETWORK INPUT
         trialId = train_trials(trial).trial;
-        
-        % make or load the spikes
-        if param.makespikes
+        if param.makespikes || strcmp('ConvTrace', input_type) || strcmp('PSTH', input_type)
             
             % get the trial session and create the spikingstruct
             session = train_trials(trial).session;
@@ -146,21 +129,26 @@ for epoch = 1:N_total
         else
             % get the struct name and load it
             trial_mat = train_trials(trial).spike_struct;
-            load( ['./Spiking structures/', trial_mat]);
+            file = load( ['./Spiking structures/', trial_mat]);
+            SpikeTrainStruct = file.SpikeTrainStruct;
         end
         
         % get the pole location and the input struct and target function
         pole = train_trials(trial).ytrain;
         [thalamus_input, target] =...
-            reservoir_input_scaled(SpikeTrainStruct, 1, input, N, pole, rate); 
+            reservoir_input(SpikeTrainStruct, input, N, N_th, pole, rate, input_type); 
         
         % SIMULATE NETWORK
         % save the old output weights
         old_output = output;
         
-        
-        [~, output, ~, ~, ~, ~] =...
-            LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+        if strcmp('spikes', input_type)
+            [~, output, ~, ~, ~, ~] =...
+                LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+        else
+            [~, output, ~, ~, ~, ~] =...
+            LIF_spiking_network_no_filt(param, weights, thalamus_input, target, FORCE); 
+        end
         
         % calculate the weight difference and update the output weights
         d_output = old_output - output;
@@ -169,20 +157,16 @@ for epoch = 1:N_total
     end
     
     
-    % VALIDATION
+    % --------------------------VALIDATION---------------------------------
     disp(['Testing network, number of trials = ', num2str(N_test)])
-    
-    % turn off FORCE learning
-    FORCE = false;
-    
+  
     % validation trials
+    FORCE = false;
     for trial = 1:N_test
         
-        % get the trial name 
+        % NETWORK INPUT
         trialId = test_trials(trial).trial;
-        
-        % make or load the spikes
-        if param.makespikes
+        if param.makespikes || strcmp('ConvTrace', input_type) || strcmp('PSTH', input_type)
             
             % get the trial session and create the spikingstruct
             session = test_trials(trial).session;
@@ -201,11 +185,16 @@ for epoch = 1:N_total
         % get the pole location and the input struct and target function
         pole = test_trials(trial).ytrain;
         [thalamus_input, target] =...
-            reservoir_input_scaled(SpikeTrainStruct, 1, input, N, pole, rate);
+            reservoir_input(SpikeTrainStruct, input, N, N_th, pole, rate, input_type);
         
         % SIMULATE NETWORK
-        [ err, output_weights, Zx, Z_out, tspikes, input_trace ] =...
-            LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+        if strcmp('spikes', input_type)
+            [ err, output_weights, Zx, Z_out, tspikes, input_trace ] =...
+                LIF_spiking_network(param, weights, thalamus_input, target, FORCE);
+        else
+            [ err, output_weights, Zx, Z_out, tspikes, input_trace] =...
+            LIF_spiking_network_no_filt(param, weights, thalamus_input, target, FORCE);
+        end
         
         %TODO
         %{
