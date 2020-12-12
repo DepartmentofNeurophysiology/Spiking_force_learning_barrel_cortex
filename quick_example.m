@@ -1,8 +1,8 @@
-%% Spiking force learning barrel cortex
+%% Quick example spiking force learning barrel cortex
 
 %% savefolder for output files
 f = filesep;
-savename = 'delete';
+savename = 'quick_example';
 savefolder = ['.' f 'Output' f savename];
 %% Set the parameters to run the simulation
 N = 2000;        % number of neurons

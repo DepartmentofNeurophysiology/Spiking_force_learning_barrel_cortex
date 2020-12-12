@@ -1,9 +1,29 @@
 function run = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
     Winp, alpha, Pexc, FORCE, makespikes, input_type, savefolder)
-%RUN Summary of this function goes here
-%   Detailed explanation goes here
-%% FORCE training a reservoir of spiking neurons
-% Explanation of the file here
+%RUN: Prepares and runs the simulation
+% Input:
+% * N = number of neurons in the reservoir
+% * N_th = number of thalamus neurons
+% * N_train = number of train trials (must be an even integer)
+% * N_test = number of test trials (must be an even integer)
+% * N_total = number of epochs
+% * Win = scaling param input weights (single val or array)
+% * G = scaling param reservoir weights (single val or array)
+% * Q = scaling param feedback weights (single val or array)
+% * Winp = sparsity of the input weights
+% * alpha = learning rate
+% * Pexc = percentage of excitatory neurons
+% * FORCE = 0 or 1, apply FORCE learning or not
+% * makespikes = 0 or 1, load the spikes or make spikes
+% * input_type = 'ConvTrace', 'PSTH' or 'spikes'
+% * savefolder = string with path to the savefolder
+% Output: 
+% * run = struct with the output parameters
+
+%% Check important parameters
+if ~strcmp('ConvTrace', input_type) && ~strcmp('PSTH', input_type) && ~strcmp('spikes', input_type)
+    error(['"' input_type '" is not a valid input type. Choose between "ConvTrace", "PSTH" or "spikes"'])
+end
 
 %% Add subfolders and import data
 addpath(genpath('Spiking structures'))
@@ -34,8 +54,8 @@ trainable_trials = file.trainable_trials;
 [train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
     trainable_trials.dist_no_touch, N_train, N_test);
 
-%TODO
 %{
+FIXED TRIALS
 disp('fixed test trials, N_test = 2')
 test_trials(1).trial = 80;  
 test_trials(1).session = 'an171923_20120607';
@@ -62,7 +82,8 @@ parameters_in = struct('N', N, 'N_th' , N_th, 'N_train', N_train,...
 mkdir(savefolder)
 run = cell(1, size(param_comb, 1)); 
 
-for i = 1: size(param_comb, 1)
+% sweep over alle combinations of input parameters
+for i = 1: size(param_comb, 1) % change to parfor during paramsweep
     
     % set the scaling parameters
     scale_parameters = struct();
@@ -73,7 +94,7 @@ for i = 1: size(param_comb, 1)
     scale_parameters.Pexc = param_comb(i, 5);
     
     % run the network
-    run(i).parameters_out = LIF_training(parameters_in,...
+    run{i}.parameters_out = LIF_training(parameters_in,...
         scale_parameters, savefolder);
 end
 
