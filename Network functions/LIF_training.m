@@ -197,7 +197,9 @@ for epoch = 1:N_total
         end
         
         %TODO
+        %{
         input_save{trial}.neuron_input = thalamus_input;
+        %}
         
         % get the spikinging statistics
         trial_length = length(Z_out);
@@ -222,6 +224,7 @@ for epoch = 1:N_total
     training_output(epoch).train_trials = train_trials;
     training_output(epoch).test_output = test_output;
     training_output(epoch).acc = acc;
+    disp(acc)
     training_output(epoch).weights = weights;
 end
 
@@ -246,7 +249,8 @@ savename = [savefolder f filename '.mat'];
 save(savename, 'training_output', 'scale_param')
  
 %TODO
+%{
 savename2 = [savefolder f 'input_save.mat'];
 save(savename2, 'input_save');
-
+%}
 
