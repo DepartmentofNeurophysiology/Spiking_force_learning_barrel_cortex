@@ -19,7 +19,7 @@ This function is called in *'run_sim.m'* and prepares the weights and input of t
 The thalamic spikes, ConvTraces and PSTH signal were made according to the 'cortical-representation-of-touch-in-silico' model and are saved per trial as a structure in the **'Spiking structures'** folder. The name of each structure is the trial number.
 
 Additional functions and data can be found in the **'Helper data'**, **'Helper functions'**, **'Network functions'** and **'Thalamus functions'** folders.
-
+A quick overview of different plots used to study the networks can be found in the **'Plot functions'** folder.
 
 ## Run code
 To run an example of the network, run *'quick_example.m'*.
@@ -31,6 +31,6 @@ Important parameters set in this script are:
 - The scaling parameters for the weights (Win, G, Q). To initiate a parameter sweep simply enter multiple values for the parameters.
 - The learning rate alpha
 - A boolean whether FORCE learning is applied or not
-- A boolean wether the input spikes are made or load from the 'Spiking Structures' folder
+- A boolean whsether the input spikes are made or load from the 'Spiking Structures' folder
 - The input type, choose between 'ConvTrace', 'PSTH' or 'spikes'
 - The percentage of excitatory neurons. When not 0, Dale's law is automatically applied.
