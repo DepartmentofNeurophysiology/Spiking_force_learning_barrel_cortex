@@ -1,27 +1,30 @@
-function [reservoir_input, target_function ] = reservoir_input(SpikeTrainStruct, Ein, N, N_th, dat, rate, input_type)
-% Function that takes the nth thalamic spike times and makes neuron spiking
+function [reservoir_input, target_function] = reservoir_input(SpikeTrainStruct, Ein, N, N_th, dat, rate, input_type)
+% RESERVOIR_INPUT takes the nth thalamic spike times and makes neuron spiking
 % input for the reservoir and returns this. 
-
-% SpikeTrainStruct: structure containing PSTH, SpikeTimes and SpikeCount of
-% a number of trials.
-% n: selects the trials in the struct for which you want to make the
-% reservoir input and the target function.
-% Ein: is the input weights matrix.
-% dat: contains the pole location.
-% rate: contains the rate of the intermediate poisson firing. 
-
-% output: is a structure containing the spiking reservoir input and the
-% target function.
+% Input:
+%   * SpikeTrainStruct = structure containing PSTH, SpikeTimes 
+% and SpikeCount of a number of trials
+%   * Ein = the input weights matrix
+%   * N = number of trials
+%   * N_th = selects the trials in the struct for which you want 
+% to make the reservoir input and the target function
+%   * dat = contains the pole location
+%   * rate = contains the rate of the intermediate poisson firing
+% Output: 
+%   * reservoir_input = structure containing the neuron spiking input for the reservoir 
+%   * target_funciton = structure containing the target function
+% Helper functions:
+%   * scale_input
 
 %% Target pulse
-trial_len = length(SpikeTrainStruct{1}.PSTH{1});
-pulse_length = 1000; % Length of pulse
-amp = 2; % Amplitude of pulse
-decay = 200; % decay of exponential pulse
-constant = 100; % How long the pulse is kept constant
-reset = 1500; % Time inbetween the trials
-dt = 0.001;                                     % 1 msec                          
-T_vec = 0:dt:reset*dt;                         % a vector with each time step	
+trial_len = length(SpikeTrainStruct{1}.PSTH{1}); % length of trial
+pulse_length = 1000;    % length of pulse (ms)
+amp = 2;                % amplitude of pulse (V)
+decay = 200;            % decay of exponential pulse (ms)
+constant = 100;         % how long the pulse is kept constant (ms)
+reset = 1500;           % time inbetween the trials (ms)
+dt = 0.001;             % integration time constant (ms)                    
+T_vec = 0:dt:reset*dt;  % vector with each time step	
 
 % if SpikeTrainStruct{1, 1}.first_touch == 0
 %     first_touch = 1000;
@@ -30,18 +33,18 @@ T_vec = 0:dt:reset*dt;                         % a vector with each time step
 % else
 %     first_touch = SpikeTrainStruct{1, 1}.first_touch;
 % end
-first_touch = 500;
+
+first_touch = 500;  % start of first touch (ms)
 
 z_all = [];
-start_early = 500; % How long to start before the end of the input
+start_early = 500;  % how long to start before the end of the input (ms)
 
 %% Make the reservoir input and the target function
 l_t = trial_len + reset;
-
 z_t = zeros(l_t,1);
 
-% from 500ms (first toucht|) to the end of the input signal + a constant of
-% 100ms
+% from 500ms (first toucht|) to the end of the input signal +
+% a constant of 100ms
 z_t(first_touch:trial_len+constant) = -dat(1)*amp*ones(length(first_touch:trial_len+constant),1);
 % from the end of the input signal + a constant of 100ms until the end of
 % the pulse length + constant of 100ms
@@ -49,10 +52,11 @@ z_t(trial_len+constant:1:trial_len+pulse_length+constant) =  -dat(1)*amp*exp(-(0
 
 z_all = [z_all z_t'];
 target_function = z_all;
-%% Neuron Input
+%% Neuron input
 % load the scale values file if necessary
 %f = filesep;
 %addpath(['..' f 'Helper data'])
+
 if ~strcmp('spikes', input_type)
     filename = 'scale_values.mat';
     if ~exist(filename, 'file')
@@ -89,7 +93,6 @@ elseif strcmp('PSTH', input_type)
     mu = scale_values.spikes.mu;
    
     reservoir_input = [scaled_neuron_input ones(N, reset)*mu];
-    %disp('PSTH')
 
 % spike condition reservoir input
 elseif strcmp('spikes', input_type)
@@ -101,23 +104,26 @@ elseif strcmp('spikes', input_type)
     neuron_input = Ein*spikes_mat;
     
     % make the poisson input
-    rng('shuffle')
+    % makes the poisson spikes random
+    % rng('shuffle') 
+    
+    % makes the poisson spikes fixed
+    rng(0) 
+    
     for n = 1:N_th
         vt = rand(size(T_vec) - [0 1]);
         spikes = (rate*dt) > vt;
-        thalamus_poisson(n).spike_times = find( spikes == 1);
+        thalamus_poisson(n).spike_times = find(spikes == 1);
     end
     poisson_input = make_poisson_spikes_weighted(N, Ein, reset, thalamus_poisson);
     reservoir_input = [neuron_input poisson_input];
-    %disp('Spikes')
 end
 
 end
 
 %% Helper functions
 function scaled = scale_input(neuron_input, scale_values, name)
-% scales the input of a given signal to the spike signal
-
+% SCALE_INPUT scales the input of a given signal to the spike signal
     temp = getfield(scale_values, name);
     spikes = scale_values.spikes;
     scaled = (neuron_input - temp.mu)./temp.sigma;
