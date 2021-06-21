@@ -1,8 +1,14 @@
 function [ Xnz_c, Xnz_a ] = make_whisker_trace(dat, pole)
-% Selects the whisking curvature and angle when poles in reach an returns
-% these two arrays.
+% MAKE_WHISKER_TRACE selects the whisking curvature and angle 
+% when poles are in reach and returns these two arrays.
 % If pole is set to 1 then whisker trace is made for when pole is in reach.
 % If pole is set to 0 then whisker trace is made for the whole trial.
+% Input: 
+%   * dat = struct containing whisker trace data
+%   * pole = -1 or 1
+% Output: 
+%   * Xnz_c = whisking curvature
+%   * Xnz_a = whisking angle
 
 % Whisker curvature
 noNAN = dat.kappaVec;
