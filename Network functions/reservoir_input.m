@@ -105,10 +105,10 @@ elseif strcmp('spikes', input_type)
     
     % make the poisson input
     % makes the poisson spikes random
-    % rng('shuffle') 
+    rng('shuffle') 
     
     % makes the poisson spikes fixed
-    rng(0) 
+    %rng(0) 
     
     for n = 1:N_th
         vt = rand(size(T_vec) - [0 1]);
