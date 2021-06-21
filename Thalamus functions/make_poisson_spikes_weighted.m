@@ -1,7 +1,15 @@
 function [ neuron_input] = make_poisson_spikes_weighted(N, Ein, T, thalamus_poisson)
-% Takes 200 spikes as input over a time T and multiplies it with the N x
-% 200 weights matrix Ein to ouput a N x T array of 'weighted' spikes which
-% can be used as input for the neural network.
+% MAKE_POISSON_SPIKES_WEIGHTED makes weighted poisson spikes by taking 200
+% spikes as input over a time T and multiplies it with the N x 200 weights
+% matrix Ein to output a N x T array of 'weighted' spikes which can be 
+% used as input for the neural network.
+% Input:
+%   * N = number of trials
+%   * Ein = the input weights matrix
+%   * T = time inbetween the trials (ms)
+%   * thalamus_poisson = thalamus poisson spikes
+% Output:
+%   * neuron_input = N x T array of weighted poisson spikes
 
 spike_array{1}.trial = zeros(200, T);
 
