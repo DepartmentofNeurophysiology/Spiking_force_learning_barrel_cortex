@@ -29,47 +29,50 @@ savefolder_PSTH = ['.' f 'Output' f main_dir f savename];
 savename = 'thalamus';
 savefolder_thalamus = ['.' f 'Output' f main_dir f savename];
 %% Set the parameters for all three simulations
-N = 2000;        % number of neurons
-N_th = 200;     % number of thalamus neurons
-N_train = 2;    % number of training trials
-N_test = 2;     % number of validation trials
-N_total = 1;    % number of epochs (only functions properly wiht one)
+% input parameters
+N = 2000;        % number of neurons in the reservoir 
+N_th = 200;      % number of thalamus neurons
+N_train = 600;   % number of training trials
+N_test = 100;    % number of validation trials
+N_total = 1;     % number of epochs 
 
-% varying parameters
-Win = [0.5];       % scales the input weights
-G = [10];         % scales the static weights
-Q = [0];         % scales the feedback weights
-Winp = [1];      % network sparsity
+% weight scaling parameters
+% Win = 0.5;     % the input weights
+G = 10;          % the static weights
+Q = 1;           % the feedback weights
+Winp = 1;        % network sparsity
 alpha = 0.05;    % learning rate
 
 % logicals
-FORCE = false;   % apply FORCE learning during trials
-makespikes = false; % make the trial spiking structures 
+FORCE = true;       % if TRUE; apply FORCE learning during trials
+makespikes = true;  % if TRUE; make the trial spiking structures 
 
 % Dale's law
-Pexc = 0; 
+Pexc = 0;   % percentage of excitatory neurons; set to 0 to ignore Dale's law restrictions
 
+% Input 
+input_type = 'spikes';  % options: 'ConvTrace', 'PSTH', 'spikes'
 %% Filtered trace
-Win = 0.2;
-run_filter = run_sim_filter(N, N_th, N_train, N_test, N_total, Win, G,...
-    Q, Winp, alpha, Pexc, FORCE, makespikes, savefolder_filter);
+Win = 0.2; % the input weight
+run_filter = run_sim(N, N_th, N_train, N_test, N_total, Win, G,...
+    Q, Winp, alpha, Pexc, FORCE, makespikes, input_type, savefolder_filter);
 
 %% PSTH of trace
-Win = 0.1;
-run_trace = run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G,...
-    Q, Winp, alpha, Pexc, FORCE, makespikes, savefolder_PSTH);
+Win = 0.1; % the input weight
+run_trace = run_sim(N, N_th, N_train, N_test, N_total, Win, G,...
+    Q, Winp, alpha, Pexc, FORCE, makespikes, input_type, savefolder_PSTH);
 
 %% Thalamus spikes
-Win = 0.05;
+Win = 0.05; % the input weight
 run_thalamus = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
-    Winp, alpha, Pexc, FORCE, makespikes, savefolder_thalamus);
+    Winp, alpha, Pexc, FORCE, makespikes, input_type, savefolder_thalamus);
 
 %% Plot the different inputs and raster plots
-epoch = 1;
-trial = 1;
-dt = 0.05;
+epoch = 1;  % number of epochs
+trial = 1;  % number of trials
+dt = 0.05;  % integration time constant (ms)
 
-% Thalamus input
+% thalamus input
 figure
 angle_curve_plot(main_dir, trial);
 
@@ -88,7 +91,7 @@ PSTH_plot(spikes, dt);
 
 sgtitle('Thalamus input')
 
-% Thalamus input simulation (no filter)
+% thalamus input simulation (no filter)
 figure
 angle_curve_plot(main_dir, trial);
 
@@ -104,7 +107,7 @@ PSTH_plot(spikes, dt);
 
 sgtitle('Convtrace input')
 
-% Curve and angle trace simulations
+% curve and angle trace simulations
 figure
 angle_curve_plot(main_dir, trial);
 
@@ -121,10 +124,17 @@ PSTH_plot(spikes, dt);
 sgtitle('PSTH input')
 
 %% Helper functions
-
 function spikes = convert_spiketimes(input_folder, N, dt, trial, epoch)
-%NETWORK_OUTPUT_PLOT 
-%   Detailed explanation goes here
+% CONVERT_SPIKETIMES converts the spiketimes from an array of spikecounts 
+% and spike times to a boolean array of the spikes over time 
+% Input:
+% * input_folder: struct with spike times
+% * N: number of neurons
+% * dt: integration time constant (ms)
+% * trial: number of trials
+% * epoch: number of epochs
+% Output:
+% * spikes: struct with spiketimes converted to the spikemat
 
 %% Load everything from the input folder
 f = filesep;
@@ -162,9 +172,12 @@ end
 end
 
 %% Plot Functions
-
 function mean_input_plot(input_folder, trial, input_type)
-% input_type is 'neuron_input' or 'syn_input'
+% MEAN_INPUT_PLOT plots the mean of the input
+% Input:
+%   * input_folder = struct with input data
+%   * trial = number of trials
+%   * input_type = 'neuron_input' or 'syn_input'
 
 f = filesep;
 structs = dir(fullfile(input_folder, '*.mat'));
@@ -192,10 +205,15 @@ xlim([-100 4000])
 end
 
 function raster_plot(spikes, N, dt)
-%RASTER_PLOT
-%   Detailed explanation goes here
+% RASTER_PLOT creates a raster plot of a samplesize of random neurons 
+% in the network. The spikes should be given as an boolean array 
+% with the neuron spikes over time 
+% Input:
+%   * spikes = converted spikes
+%   * N = number of neurons 
+%   * dt = integration time constant (ms)
 
-% Plot rasterplot of 200 neurons
+% plot rasterplot of 200 neurons
 hold on
 title('Network raster plot and PSTH')
 mid = ceil(N/2);
@@ -210,8 +228,11 @@ hold off
 end
 
 function PSTH_plot(spikes, dt)
-%PSTH_PLOT 
-%   Detailed explanation goes here
+% PSTH_PLOT makes a PSTH plot of the entire network activity. The spikes 
+% should be given as an boolean array with the neuron spikes over time 
+% Input:
+%   * spikes = converted spikes
+%   * dt = integration time constant (ms)
 
 % create PSTH over network of neurons
 PSTH = squeeze(sum(spikes,2));
@@ -231,7 +252,12 @@ xlim([-100 4000])
 end
 
 
-function angle_curve_plot(main_dir ,trial)
+function angle_curve_plot(main_dir, trial)
+% ANGLE_CURVE_PLOT plots the angle and curvature of the wisking data
+% Input: 
+%   * main_dir = main directory of input folder
+%   * trial = number of trials
+
 f = filesep;
 % Load everything from the input folder
 filename = ['Output' f main_dir f 'angle_whisk.mat'];
