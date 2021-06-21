@@ -1,24 +1,25 @@
 function run = run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q,...
     Winp, alpha, Pexc, FORCE, makespikes, input_type, savefolder)
-%RUN: Prepares and runs the simulation
+% RUN prepares and runs the simulation
 % Input:
-% * N = number of neurons in the reservoir
-% * N_th = number of thalamus neurons
-% * N_train = number of train trials (must be an even integer)
-% * N_test = number of test trials (must be an even integer)
-% * N_total = number of epochs
-% * Win = scaling param input weights (single val or array)
-% * G = scaling param reservoir weights (single val or array)
-% * Q = scaling param feedback weights (single val or array)
-% * Winp = sparsity of the input weights
-% * alpha = learning rate
-% * Pexc = percentage of excitatory neurons
-% * FORCE = 0 or 1, apply FORCE learning or not
-% * makespikes = 0 or 1, load the spikes or make spikes
-% * input_type = 'ConvTrace', 'PSTH' or 'spikes'
-% * savefolder = string with path to the savefolder
+%   * N = number of neurons in the reservoir
+%   * N_th = number of thalamus neurons
+%   * N_train = number of train trials (must be an even integer)
+%   * N_test = number of test trials (must be an even integer)
+%   * N_total = number of epochs
+%   * Win = scaling param input weights (single val or array)
+%   * G = scaling param reservoir weights (single val or array)
+%   * Q = scaling param feedback weights (single val or array)
+%   * Winp = sparsity of the input weights
+%   * alpha = learning rate
+%   * Pexc = percentage of excitatory neurons
+%   * FORCE = 0 or 1, apply FORCE learning or not
+%   * makespikes = 0 or 1, load the spikes or make spikes (must be 1 if
+% input_type is 'spikes')
+%   * input_type = 'ConvTrace', 'PSTH' or 'spikes'
+%   * savefolder = string with path to the savefolder
 % Output: 
-% * run = struct with the output parameters
+%   * run = struct with the output parameters
 
 %% Check important parameters
 if ~strcmp('ConvTrace', input_type) && ~strcmp('PSTH', input_type) && ~strcmp('spikes', input_type)
@@ -34,12 +35,12 @@ addpath(genpath('Network functions'))
 addpath(genpath('Parameter schemes'))
 
 %% Fixed Parameters
-tau_d = 50;             % synaptic decay
-tau_r = 2;              % synaptic rise
-Ibias = -40;            % bias current
-step = 20;              % learning step
-dt = 0.05;              % integration time constant
-rate = 2;               % rate
+tau_d = 50;             % synaptic decay (ms)
+tau_r = 2;              % synaptic rise (ms)
+Ibias = -40;            % bias current (V)
+step = 20;              % learning step 
+dt = 0.05;              % integration time constant (ms)
+rate = 5;               % rate of the intermediate poisson firing (Hz)
 
 %% Get the combination struct of the scaling parameters
 param_comb = all_comb(Win, G, Q, Winp, Pexc);
@@ -51,7 +52,10 @@ file = load('trainable_trials');
 trainable_trials = file.trainable_trials;
 
 % get the shuffled train and test trials in the ratio 1:1, prox:dist
-[train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
+% [train_trials, test_trials] = trial_selector(trainable_trials.prox_touch,...
+%     trainable_trials.dist_no_touch, N_train, N_test);
+% get the fixed train and test trials; one distal and one proximal trial
+[train_trials, test_trials] = fixed_trial_selector(trainable_trials.prox_touch,...
     trainable_trials.dist_no_touch, N_train, N_test);
 
 %{
