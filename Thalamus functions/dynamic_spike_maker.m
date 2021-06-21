@@ -1,7 +1,13 @@
 function [ SpikeTrainStruct, pole ] = dynamic_spike_maker(KernelStruct, dat)
-% Input is which trials you want to make thalamic spike trains for and the
-% thalamic kernels and a structure containing the whisking data (dat).
-% Output are the corresponding thalamic spike trains.
+% DYNAMIC_SPIKE_MAKER makes thalamic spikes trains for specific trials
+% Input:
+%   * KernelStruct = struct containing thalamic kernels
+%   * dat = struct containing the wisking data
+% Output:
+%   * SpikeTrainStruct = struct containing the corresponding thalamic
+% spike trains
+%   * pole = pole (-1 or 1)
+
 %% Make barrelstruct
 Nbx = 1;                                                % # of barrels 'x-direction'
 Nby = 1;                                                % # of barrels 'y-direction'
