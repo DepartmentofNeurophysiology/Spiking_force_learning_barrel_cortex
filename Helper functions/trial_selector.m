@@ -1,11 +1,17 @@
 function [shuffled_train, shuffled_val] =...
     trial_selector(prox_touch, dist_no_touch, N_train, N_test)
-%TRIAL_SHUFFLE Summary of this function goes here
-%   Detailed explanation goes here
+% trial_selector gets the shuffled and random train and test trials 
+% in the ratio 1:1, prox:dist
+% Input:
+%   * prox_touch = struct containing data regarding proximal whisker touches
+%   * dist_no_touch = struct containing data regarding distal whisker touches
+%   * N_train = number of training trials
+%   * N_test = number of test trials
+% Output:
+%   * shuffled_train = struct containing shuffled training trials
+%   * Shuffled_val = struct containing shuffled test trials
 
 rng('shuffle')
-
-% check if the max amount of trials is exceeded?
 
 % create indices lists for both conditions
 prox_index = 1 : length(prox_touch);
