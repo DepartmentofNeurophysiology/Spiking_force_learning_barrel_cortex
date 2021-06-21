@@ -1,97 +1,90 @@
 %% Param Demo
 % Runs short simulations with different scaling parameters
-%   * Varying static weights G
-%   * Varying input Win and Winp
-%   * Varying feedback Q
+%   * varying and plotting input weights Win 
+%   * varying and plotting static weights G
+%   * varying and plotting feedback weights Q
+%   * varying and plotting network sparsity Winp
+% Helper functions
+%   * make_colors
+%   * sort_nat
+% Plot functions
+%   * scale_param_plot
+%   * cv_G_plot
+%   * cv_hist_plot
+%   * cdf_Q_plot
 
-%% - Add paths
+%% Add paths
 f = filesep;
 main_dir = 'Param_demo_thalamus_scaled';
 mkdir(['Output' f main_dir])
 
-%% - Save files
-savename = 'VarG';
-savefolder_G = ['.' f 'Output' f main_dir f savename];
-
+%% Save files
 savename = 'VarWin';
 savefolder_Win = ['.' f 'Output' f main_dir f savename];
 
-savename = 'VarWinp';
-savefolder_Winp = ['.' f 'Output' f main_dir f savename];
+savename = 'VarG';
+savefolder_G = ['.' f 'Output' f main_dir f savename];
 
 savename = 'VarQ';
 savefolder_Q = ['.' f 'Output' f main_dir f savename];
 
-%% - Global network parameters
-% Set the parameters for all three simulations
+savename = 'VarWinp';
+savefolder_Winp = ['.' f 'Output' f main_dir f savename];
+
+%% Global network parameters
+% set the parameters for all three simulations
+% input parameters
 N = 2000;        % number of neurons
-N_th = 200;     % number of thalamus neurons
-N_train = 2;    % number of training trials
+N_th = 200;      % number of thalamus neurons
+N_train = 2;     % number of training trials
 N_test = 10;     % number of validation trials
-N_total = 1;    % number of epochs (only functions properly wiht one)
+N_total = 1;     % number of epochs 
 alpha = 0.05;    % learning rate
 
 % logicals
-FORCE = false;   % apply FORCE learning during trials
-makespikes = false; % make the trial spiking structures 
+FORCE = false;       % apply FORCE learning during trials
+makespikes = false;  % make the trial spiking structures 
 
 % Dale's law
-Pexc = 0;
+Pexc = 0;   % percentage of excitatory neurons; set to 0 to ignore Dale's law restrictions
 
-%% -- Varying G
+% Input 
+input_type = 'spikes';  % options: 'ConvTrace', 'PSTH', 'spikes'
+%% Varying input weight - Win
 %{
 % varying parameters
-Win = [0];       % scales the input weights
-% scales the static weights
-G = [0 1 10 20 30 40 50 60 70 80 90 100];
-%G = [1:15];
+G = [10];           % scales the static weights
+Q = [0];            % scales the feedback weights
+Win = [0:0.1:1];    % scales the input weights
+Winp = [1];         % network sparsity
+%}
+
+%% Run varying Win
+%{
+run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
+   alpha, Pexc, FORCE, makespikes, savefolder_Win);
+%}
+
+%% Plot varying Win
+%{
+figure 
+subplot(1,2,1)
+param_name = 'Win';
+scale_param_plot(savefolder_Win, param_name, N_total, N_test)
+%}
+
+%% Varying static weight - G
+% varying parameters
+Win = [0.5];       % scales the input weights
+G = [1:15];      % scales the static weights
 Q = [0];         % scales the feedback weights
 Winp = [0];      % network sparsity
 
-%% --- Run varying G
+%% Run varying G
 run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
-    alpha, Pexc, FORCE, makespikes, savefolder_G);
-%}
-%% -- Varying Win
-% varying parameters
-G = [10];        % scales the static weights
-Q = [0];         % scales the feedback weights
-Win = [0:0.1:1];       % scales the input weights
-Winp = [1];      % network sparsity
+    alpha, Pexc, FORCE, makespikes, input_type, savefolder_G);
 
-%% --- Run varying Win
-run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
-    alpha, Pexc, FORCE, makespikes, savefolder_Win);
-
-%% -- Varying Winp
-
-% varying parameters
-G = [10];        % scales the static weights
-Q = [0];         % scales the feedback weights
-Win = [0.5];       % scales the input weights
-Winp = [0:0.1:1];      % network sparsity
-
-%% --- Run varying Winp
-run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
-    alpha, Pexc, FORCE, makespikes, savefolder_Winp);
-
-%% -- Varying Q
-%{
-% varying parameters
-G = [10];        % scales the static weights
-Q = [1:10];         % scales the feedback weights
-Win = [0.05];       % scales the input weights
-Winp = [1];      % network sparsity
-FORCE = true;
-%% --- Run varying Q
-
-run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
-    alpha, Pexc, FORCE, makespikes, savefolder_Q);
-%}
-%% -- Plots
-
-% Plot varying G
-%{
+%% Plot varying G
 figure
 subplot(2,2,1)
 param_name = 'G';
@@ -102,24 +95,50 @@ cv_G_plot(savefolder_G, N_total, N_test)
 
 subplot(2,2,3)
 cv_hist_plot(savefolder_G, N_total, N_test)
+
+%% Varying feedback weight - Q
+%{
+% varying parameters
+G = [10];           % scales the static weights
+Q = [1:10];         % scales the feedback weights
+Win = [0.05];       % scales the input weights
+Winp = [1];         % network sparsity
+FORCE = true;
 %}
 
-% Plot varying Win
-figure 
-subplot(1,2,1)
-param_name = 'Win';
-scale_param_plot(savefolder_Win, param_name, N_total, N_test)
+%% Run varying Q
+%{
+run_sim_PSTH(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
+    alpha, Pexc, FORCE, makespikes, savefolder_Q);
+%}
 
-% Plot varying Winp
-subplot(1,2,2)
-param_name = 'Winp';
-scale_param_plot(savefolder_Winp, param_name, N_total, N_test)
-
-% Plot varying Q
+%% Plot varying Q
 %{
 figure
 cdf_Q_plot(savefolder_Q, N_total, N_test)
 %}
+
+%% Varying network sparsity - Winp
+%{
+% varying parameters
+G = [10];           % scales the static weights
+Q = [0];            % scales the feedback weights
+Win = [0.5];        % scales the input weights
+Winp = [0:0.1:1];   % network sparsity
+%}
+%% Run varying Winp
+%{
+run_sim(N, N_th, N_train, N_test, N_total, Win, G, Q, Winp,...
+    alpha, Pexc, FORCE, makespikes, savefolder_Winp);
+%}
+
+%% Plot varying Winp
+%{
+subplot(1,2,2)
+param_name = 'Winp';
+scale_param_plot(savefolder_Winp, param_name, N_total, N_test)
+%}
+
 %% Helper functions
 
 function colormat = make_colors(Nvar, colorscheme)
@@ -133,7 +152,7 @@ colormat = cmap(colorindex, :);
 end
 
 function [cs,index] = sort_nat(c,mode)
-%sort_nat: Natural order sort of cell array of strings.
+% sort_nat: Natural order sort of cell array of strings.
 % usage:  [S,INDEX] = sort_nat(C)
 %
 % where,
@@ -141,8 +160,8 @@ function [cs,index] = sort_nat(c,mode)
 %    S is C, sorted in natural order.
 %    INDEX is the sort order such that S = C(INDEX);
 %
-% Natural order sorting sorts strings containing digits in a way such that
-% the numerical value of the digits is taken into account.  It is
+% natural order sorting sorts strings containing digits in a way such that
+% the numerical value of the digits is taken into account. It is
 % especially useful for sorting file names containing index numbers with
 % different numbers of digits.  Often, people will use leading zeros to get
 % the right sort order, but with this function you don't have to do that.
@@ -232,22 +251,24 @@ end
 %% Plot functions
 
 function scale_param_plot(input_folder, param_name, epoch, trials)
-%SCALE_PARAM_PLOT Plots the firing rate and Coefficient of variation
+% SCALE_PARAM_PLOT Plots the firing rate and Coefficient of variation
 % over different values of a scaling parameter
-%   Detailed explanation goes here
+% input:
+%   * input_folder: structs containing information of the scaling weights parameter
+%   * param_name: name of the scaling weight parameter
+%   * epoch: number of epochs
+%   * trials: number of trials
 
 f = filesep;
 %% Get a list of the structs in the folder
 structs = dir(fullfile(input_folder, '*.mat'));
 struct_names = sort_nat({structs.name}, 'ascend');
 
-
 %% Load the structs and save the relevant information
 scale_param = zeros(1, length(structs));
 Cv = [];
 A_t = [];
 scale_param_var = [];
-
 
 % loop through the files in the folder and save the relevant information
 for i = 1 : length(struct_names)
@@ -299,6 +320,14 @@ title('CV vs firing rate')
 end
 
 function cv_G_plot(input_folder, epoch, trials)
+% CV_G_PLOT plots the Coefficient of variation 
+% over different values of the scaling static weight - G
+% input:
+%   * input_folder: structs containing information of 
+% the scaling static weights - G
+%   * epoch: number of epochs
+%   * trials: number of trials
+
 f = filesep;
 %% Get a list of the structs in the folder
 structs = dir(fullfile(input_folder, '*.mat'));
@@ -326,11 +355,8 @@ for i = 1 : length(struct_names)
     end
     
     output_Cv = output_Cv/trials;
-    
-    
     mean_Cv(i) = mean(output_Cv);
 end
-
 
 plot(log10(Gvar), mean_Cv,'k','linewidth',1.1)
 xlabel('log G')
@@ -338,13 +364,20 @@ ylabel('CV')
 end
 
 function cv_hist_plot(savefolder, epoch, trials)
+% CV_HIST_PLOT plots the histogram with the Coefficient of variations
+% over different values of the scaling static weight - G 
+% input:
+%   * savefolder: structs containing information of 
+% the scaling static weights - G
+%   * epoch: number of epochs
+%   * trials: number of trials
+
 f = filesep;
 structs = dir(fullfile(savefolder, '*.mat'));
 
 Cv = [];
 G_var = [];
 Gs = zeros(1, length(structs));
-
 
 for i = 1 : length(structs)
     filenname = [savefolder f structs(i).name];
@@ -379,7 +412,6 @@ caxis([min(Gs) max(Gs)])
 hold off
 
 % make the matrix to plot
-%{
 histogram2(Cv, G_var,'DisplayStyle', 'tile', 'EdgeAlpha', 0, 'FaceAlpha', 1);
 title('Tile histogram CV neurons')
 hcb = colorbar;
@@ -388,10 +420,16 @@ titleString = '# neurons';
 set(colorTitleHandle ,'String',titleString);
 xlabel('Cv')
 ylabel('G')
-%}
 end
 
 function cdf_Q_plot(savefolder, epoch, trials)
+% CDF_Q_PLOT plots the cumulative distribution of 
+% the scaling feedback weight - Q
+% input:
+% * savefolder: structs containing information of 
+% the scaling feedback weights - Q
+% * epoch: number of epochs
+% * trials: number of trials
 
 f = filesep;
 structs = dir(fullfile(savefolder, '*.mat'));
@@ -405,7 +443,7 @@ for i = 1 : length(structs)
     filenname = [savefolder f struct_names{i}];
     input = load(filenname);
     
-    % get the value for G
+    % get the value for Q
     Qs(i) = input.scale_param.Q;
     
     % get the mean Cv over all the trials
@@ -425,11 +463,9 @@ for i = 1 : length(structs)
     ylim([0 1])
     colormap(cool)
     colorbar
-    
 end
 caxis([min(Qs) max(Qs)])
 hold off
-    
 end
 
 
