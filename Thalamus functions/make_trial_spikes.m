@@ -1,6 +1,12 @@
 function [SpikingStruct] = make_trial_spikes(session, trialId, whiskmat, KernelStruct)
-%MAKE_TRIAL_SPIKES Summary of this function goes here
-%   Detailed explanation goes here
+% MAKE_TRIAL_SPIKES makes spiking data for specific trial
+% Input:
+%   * session = session
+%   * trialID = trial ID
+%   * whiskmat = struct containing input whisking data
+%   * KernelStruct = struct containing input kernel data
+% Ouput:
+%   * SpikingStruct = Struct containing spiking data
 
 % select sessions from the whiskingmat
 session_index = find(strcmp({whiskmat.session}, session));
