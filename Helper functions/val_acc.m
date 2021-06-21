@@ -1,8 +1,14 @@
 function [ acc ] = val_acc(test_trials, network_output, target, first_touches)
-% Calculate the validation accuracy 
+% VAL_ACC calculates the validation accuracy of the neural network
+% Input:
+%   * test_trials = number of test trials
+%   * network_output = network output (Z_out)
+%   * target = target function (Zx)
+%   * first_touches = time of start of the first touch (ms)
+% Output: 
+%   * acc = validation accuracy
 
 %% Calculate the mean value each trial
-
 mean_network = zeros(test_trials, 1);
 mean_target = zeros(test_trials, 1);
 
@@ -38,8 +44,10 @@ for i = 1:test_trials
     end
 end
 %% Calculate the accuracy 
-multi = network_answer .* correct_answer; % All positive values indicated correctly classified val_trials
-correct = sum(multi==1); % Count total positive values
+% All positive values indicated correctly classified val_trials
+multi = network_answer .* correct_answer; 
+% Count total positive values
+correct = sum(multi==1); 
 acc = correct/test_trials;
 end
 
