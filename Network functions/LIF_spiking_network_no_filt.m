@@ -1,10 +1,22 @@
 function [error, output_weights, Zx, Z_out, tspikes] = LIF_spiking_network_no_filt(param, weights, thalamus_input, target, FORCE)
-%LIF_SPIKING_NETWORK_V1 Summary of this function goes here
-%   Detailed explanation goes here
+% LIF_SPIKING_NETWORK_NO_FILT computes the dynamics of the spiking 
+% neural network without synaps filter, and applies FORCE learning, 
+% only for input types 'ConvTrace' or ' PSTH'
+% Input:
+%   * param = network parameters
+%   * weights = weights parameters
+%   * thalamus_input = thalamic input
+%   * target = target function
+%   * FORCE = 0 or 1, apply FORCE learning or not
+% Output:
+%   * error = mean square error between network output and target
+%   * output_weights = network output weights
+%   * Zx = target function
+%   * Z_out = network output
+%   * tspikes = spike times
 
 disp('no synapse filter')
 %% Network parameters
-
 % input parameters
 N = param.N;
 alpha = param.alpha;
@@ -15,11 +27,11 @@ tau_d = param.tau_d;
 tau_r = param.tau_r; 
 
 % static parameters
-tref = 2;
-tau_m = 10;
-vreset = -65;
-vthresh = -40; 
-rng(1);
+tref = 2;       % refractory time period (ms)
+tau_m = 10;     % membrane time constant (ms)
+vreset = -65;   % reset potential (V)
+vthresh = -40;  % threshold potential (V) 
+rng(1);         % every time the same random distribution 
 
 %% Define weights
 output_weights = weights.output;
@@ -36,7 +48,7 @@ nt = T/dt;
 %% Input
 input = zeros(N, nt);
 
-% Adjust the time resolution of input to dt of the network
+% adjust the time resolution of input to dt of the network
 for t = 1:nt 
     
     if mod(t, 1/dt) == 0
@@ -45,7 +57,6 @@ for t = 1:nt
 end
 
 %% Storage parameters
-
 % post synaptic current and sum synaptic input
 Ipsc = zeros(N,1); 
 Ispikes = 0*Ipsc; 
@@ -96,13 +107,12 @@ for i = 1:1:nt
             
             nspikes = nspikes + length(spike_index);
             
-            %Alternative spike storage
+            % alternative spike storage
             %spikes = [spike_index,0*spike_index+dt*i];
             %tspikes = [tspikes; spikes];
         end
     end
     %% Implement RLMS with the FORCE method
-    
     % calculate the network output and error
     Z = output_weights'*r;
     err = Z - Zx(:, in); 
@@ -147,11 +157,3 @@ tspikes = tspikes((tspikes(:, 1) ~= 0), :);
 
 end
 
-
-    
-    
-    
-    
-    
-        
-      
