@@ -1,8 +1,14 @@
 function [ A_t, ISI, Cv ] = spike_stats( tspike, trial_length , N )
-% Input an array with which neurons spikes when, and return the ISI, the
-% coefficient of variation and the average activity.
-
-% Average activity
+% SPIKE_STATS calculates the average activity, interspike intervals
+% and the coefficient of variation of all neurons in the reservoir
+% Input:
+%   * tspikes = spike times (s)
+%   * trial_length = length of trial (s)
+%   * N = number of neurons in the reservoir
+% Output:
+%   * A_t = average activity / average firing rate 
+%   * ISI = interspike intervals
+%   * Cv = coefficient of variantion
 
 % remove the zero values
 not_null = tspike(:, 1) ~= 0;
